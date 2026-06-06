@@ -1,10 +1,11 @@
 import structlog
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.database import AsyncSessionLocal
-from app.routers import bookings
+from app.routers import bookings, dashboard, logs, portal_status
 
 logger = structlog.get_logger()
 
@@ -15,9 +16,17 @@ app = FastAPI(
 )
 
 # ---------------------------------------------------------------------------
+# Static files
+# ---------------------------------------------------------------------------
+app.mount("/static", StaticFiles(directory="/app/app/static"), name="static")
+
+# ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
 app.include_router(bookings.router)
+app.include_router(logs.router)
+app.include_router(portal_status.router)
+app.include_router(dashboard.router)  # must be last (catches "/" routes)
 
 
 # ---------------------------------------------------------------------------
@@ -43,7 +52,6 @@ async def run_migrations() -> None:
 # ---------------------------------------------------------------------------
 @app.get("/health", response_class=JSONResponse, tags=["health"])
 async def health() -> dict:
-    """Health check — verifies service is running and DB is reachable."""
     db_status = "ok"
     try:
         async with AsyncSessionLocal() as session:

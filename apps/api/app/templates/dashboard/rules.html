@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Rules — RidePortal Watcher{% endblock %}
+{% block content %}
+{% set active = 'rules' %}
+<h1>📋 Business Rules</h1>
+
+{% if rules %}
+  {% for rule in rules %}
+  <div class="rule-card">
+    <h3>
+      {{ rule.name }}
+      {% if rule.is_active %}
+        <span class="badge badge-healthy" style="font-size:10px; margin-left:8px;">ACTIVE</span>
+      {% else %}
+        <span class="badge badge-new" style="font-size:10px; margin-left:8px;">INACTIVE</span>
+      {% endif %}
+    </h3>
+    <div class="rule-grid">
+      <div class="rule-field">
+        <div class="label">Min Booking Value</div>
+        <div class="value">{% if rule.min_booking_value %}£{{ "%.2f"|format(rule.min_booking_value|float) }}{% else %}Any{% endif %}</div>
+      </div>
+      <div class="rule-field">
+        <div class="label">Auto-Accept</div>
+        <div class="value">{{ "✅ Enabled" if rule.auto_accept else "❌ Disabled" }}</div>
+      </div>
+      <div class="rule-field">
+        <div class="label">ID</div>
+        <div class="value mono">{{ rule.id }}</div>
+      </div>
+      <div class="rule-field">
+        <div class="label">Allowed Pickups</div>
+        <div class="value">{{ rule.allowed_pickup_locations | join(", ") if rule.allowed_pickup_locations else "Any" }}</div>
+      </div>
+      <div class="rule-field">
+        <div class="label">Allowed Vehicles</div>
+        <div class="value">{{ rule.allowed_vehicle_categories | join(", ") if rule.allowed_vehicle_categories else "Any" }}</div>
+      </div>
+      <div class="rule-field">
+        <div class="label">Allowed Customers</div>
+        <div class="value">{{ rule.allowed_customer_categories | join(", ") if rule.allowed_customer_categories else "Any" }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty">No rules configured.</div>
+{% endif %}
+{% endblock %}

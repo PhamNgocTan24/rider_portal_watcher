@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Overview — RidePortal Watcher{% endblock %}
+{% block content %}
+{% set active = 'overview' %}
+<h1>📊 Overview</h1>
+
+<div class="stats-grid">
+  <div class="stat-card gray">
+    <div class="label">Total Bookings</div>
+    <div class="value">{{ counts.total }}</div>
+  </div>
+  <div class="stat-card blue">
+    <div class="label">New</div>
+    <div class="value">{{ counts.new }}</div>
+  </div>
+  <div class="stat-card green">
+    <div class="label">Accepted</div>
+    <div class="value">{{ counts.accepted }}</div>
+  </div>
+  <div class="stat-card red">
+    <div class="label">Rejected</div>
+    <div class="value">{{ counts.rejected }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Portal Status</h2></div>
+  {% if portals %}
+  <table>
+    <thead><tr><th>Portal</th><th>Status</th><th>Auto-Accept Paused</th><th>Last Error</th><th>Updated</th></tr></thead>
+    <tbody>
+      {% for p in portals %}
+      <tr>
+        <td class="mono">{{ p.portal_name }}</td>
+        <td><span class="badge badge-{{ p.status }}">{{ p.status }}</span></td>
+        <td>{{ "Yes ⚠️" if p.auto_accept_paused else "No" }}</td>
+        <td class="log-msg">{{ p.last_error or "—" }}</td>
+        <td class="mono">{{ p.updated_at.strftime("%Y-%m-%d %H:%M") if p.updated_at else "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">No portal status recorded yet.</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <div class="card-header"><h2>Recent Logs</h2></div>
+  {% if recent_logs %}
+  <table>
+    <thead><tr><th>Time</th><th>Portal</th><th>Level</th><th>Step</th><th>Message</th></tr></thead>
+    <tbody>
+      {% for log in recent_logs %}
+      <tr>
+        <td class="mono">{{ log.created_at.strftime("%H:%M:%S") }}</td>
+        <td class="mono">{{ log.portal_name }}</td>
+        <td><span class="badge badge-{{ log.level }}">{{ log.level }}</span></td>
+        <td class="mono">{{ log.step }}</td>
+        <td class="log-msg">{{ log.message }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">No logs yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

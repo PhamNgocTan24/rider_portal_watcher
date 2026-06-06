@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Logs — RidePortal Watcher{% endblock %}
+{% block content %}
+{% set active = 'logs' %}
+<h1>📜 Automation Logs</h1>
+<div class="card">
+  {% if logs %}
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Portal</th>
+        <th>Level</th>
+        <th>Step</th>
+        <th>Booking ID</th>
+        <th>Message</th>
+        <th>Screenshot</th>
+        <th>HTML Snapshot</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td class="mono">{{ log.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
+        <td class="mono">{{ log.portal_name }}</td>
+        <td><span class="badge badge-{{ log.level }}">{{ log.level }}</span></td>
+        <td class="mono">{{ log.step }}</td>
+        <td class="mono">{{ log.external_booking_id or "—" }}</td>
+        <td class="log-msg">{{ log.message }}</td>
+        <td>{% if log.screenshot_path %}<a href="{{ log.screenshot_path }}" target="_blank">📷</a>{% else %}—{% endif %}</td>
+        <td>{% if log.html_snapshot_path %}<a href="{{ log.html_snapshot_path }}" target="_blank">📄</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">No logs yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — RidePortal Watcher{% endblock %}
+{% block content %}
+<h1>{{ title }}</h1>
+<div class="card">
+  {% if bookings %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Portal</th>
+        <th>Pickup</th>
+        <th>Dropoff</th>
+        <th>Value</th>
+        <th>Vehicle</th>
+        <th>Customer</th>
+        <th>Pickup Time</th>
+        <th>Status</th>
+        <th>Reason</th>
+        <th>Detected</th>
+        <th>Screenshot</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in bookings %}
+      <tr>
+        <td class="mono">{{ b.external_booking_id }}</td>
+        <td class="mono">{{ b.portal_name }}</td>
+        <td>{{ b.pickup_location or "—" }}</td>
+        <td>{{ b.dropoff_location or "—" }}</td>
+        <td>{% if b.booking_value %}£{{ "%.2f"|format(b.booking_value|float) }}{% else %}—{% endif %}</td>
+        <td>{{ b.vehicle_category or "—" }}</td>
+        <td>{{ b.customer_category or "—" }}</td>
+        <td class="mono">{{ b.pickup_time.strftime("%Y-%m-%d %H:%M") if b.pickup_time else "—" }}</td>
+        <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
+        <td class="log-msg">{{ b.decision_reason or "—" }}</td>
+        <td class="mono">{{ b.detected_at.strftime("%Y-%m-%d %H:%M") }}</td>
+        <td>{% if b.screenshot_path %}<a href="{{ b.screenshot_path }}" target="_blank">📷</a>{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="empty">No bookings found.</div>
+  {% endif %}
+</div>
+{% endblock %}
