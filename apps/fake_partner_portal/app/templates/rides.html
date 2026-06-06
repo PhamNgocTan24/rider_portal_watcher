@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Available Rides{% endblock %}
+
+{% block content %}
+
+{% if layout == "broken" %}
+<!-- BROKEN LAYOUT: no useful selectors, worker should detect failure -->
+<div class="broken-notice">⚠ Portal is experiencing issues. Data unavailable.</div>
+
+{% elif layout == "layout_b" %}
+<!-- LAYOUT B: uses .job-row / .job-id instead of data-testid -->
+<h2>Available Rides</h2>
+<div class="rides-wrapper">
+  {% for ride in rides %}
+  {% if ride.status == "available" %}
+  <div class="job-row">
+    <span class="job-id">{{ ride.external_booking_id }}</span>
+    <span class="job-pickup">{{ ride.pickup_location }}</span>
+    <span class="job-dropoff">{{ ride.dropoff_location }}</span>
+    <span class="job-value">£{{ "%.2f"|format(ride.booking_value) }}</span>
+    <a class="job-link" href="/rides/{{ ride.external_booking_id }}">View</a>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- LAYOUT A (default): data-testid selectors -->
+<h2 data-testid="page-title">Available Rides</h2>
+
+<div class="ride-list" data-testid="ride-list">
+  {% for ride in rides %}
+  {% if ride.status == "available" %}
+  <article class="ride-request-card" data-testid="booking-card" data-booking-id="{{ ride.external_booking_id }}">
+    <div class="card-header">
+      <span class="booking-id" data-testid="booking-id">{{ ride.external_booking_id }}</span>
+      <span class="booking-status status-available" data-testid="booking-status">available</span>
+    </div>
+    <div class="card-body">
+      <div class="card-row">
+        <span class="label">From</span>
+        <span class="value" data-testid="pickup-location">{{ ride.pickup_location }}</span>
+      </div>
+      <div class="card-row">
+        <span class="label">To</span>
+        <span class="value" data-testid="dropoff-location">{{ ride.dropoff_location }}</span>
+      </div>
+      <div class="card-row">
+        <span class="label">Value</span>
+        <span class="value booking-value" data-testid="booking-value">£{{ "%.2f"|format(ride.booking_value) }}</span>
+      </div>
+      <div class="card-row">
+        <span class="label">Vehicle</span>
+        <span class="value" data-testid="vehicle-category">{{ ride.vehicle_category }}</span>
+      </div>
+    </div>
+    <a class="btn-view" href="/rides/{{ ride.external_booking_id }}" data-testid="btn-view-detail">View Details</a>
+  </article>
+  {% endif %}
+  {% endfor %}
+</div>
+
+{% if not rides %}
+<p data-testid="no-rides">No available rides.</p>
+{% endif %}
+{% endif %}
+
+{% endblock %}

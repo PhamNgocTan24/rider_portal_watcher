@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RidePortal — Login</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="login-body">
+  <div class="login-card" data-testid="login-card">
+    <h1 class="login-title">🚗 RidePortal</h1>
+    <p class="login-subtitle">Partner Portal</p>
+
+    {% if error %}
+    <div class="alert alert-error" data-testid="login-error">{{ error }}</div>
+    {% endif %}
+
+    <form action="/login" method="post" class="login-form" data-testid="login-form">
+      <label for="username">Username</label>
+      <input
+        id="username"
+        name="username"
+        type="text"
+        placeholder="demo"
+        autocomplete="username"
+        data-testid="input-username"
+        required
+      />
+
+      <label for="password">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        placeholder="demo123"
+        autocomplete="current-password"
+        data-testid="input-password"
+        required
+      />
+
+      <button type="submit" class="btn-primary" data-testid="btn-login">Sign In</button>
+    </form>
+
+    <p class="login-hint">Demo credentials: <code>demo / demo123</code></p>
+  </div>
+</body>
+</html>
