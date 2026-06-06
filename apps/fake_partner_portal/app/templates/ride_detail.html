@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Ride {{ ride.external_booking_id }}{% endblock %}
+
+{% block content %}
+
+{% if layout == "broken" %}
+<!-- BROKEN LAYOUT -->
+<div class="broken-notice">⚠ Portal is experiencing issues. Data unavailable.</div>
+
+{% elif layout == "layout_b" %}
+<!-- LAYOUT B: different class names, no data-testid -->
+<h2>Ride Details</h2>
+<div class="detail-container">
+  <p class="detail-id">{{ ride.external_booking_id }}</p>
+  <p class="detail-pickup">{{ ride.pickup_location }}</p>
+  <p class="detail-dropoff">{{ ride.dropoff_location }}</p>
+  <p class="detail-value">£{{ "%.2f"|format(ride.booking_value) }}</p>
+  <p class="detail-vehicle">{{ ride.vehicle_category }}</p>
+  <p class="detail-customer">{{ ride.customer_category }}</p>
+  <p class="detail-time">{{ ride.pickup_time }}</p>
+  {% if ride.notes %}<p class="detail-notes">{{ ride.notes }}</p>{% endif %}
+  {% if ride.status == "available" %}
+  <form action="/rides/{{ ride.external_booking_id }}/accept" method="post">
+    <button type="submit" class="accept-btn">Accept Ride</button>
+  </form>
+  {% else %}
+  <p class="detail-accepted">✓ Accepted</p>
+  {% endif %}
+</div>
+
+{% else %}
+<!-- LAYOUT A (default): data-testid selectors -->
+<div class="detail-card" data-testid="ride-detail-card">
+  <div class="detail-header">
+    <h2 data-testid="page-title">Ride Details</h2>
+    <span class="booking-id" data-testid="booking-id">{{ ride.external_booking_id }}</span>
+    <span class="booking-status status-{{ ride.status }}" data-testid="booking-status">{{ ride.status }}</span>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-row">
+      <span class="label">Pickup</span>
+      <span class="value" data-testid="pickup-location">{{ ride.pickup_location }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Dropoff</span>
+      <span class="value" data-testid="dropoff-location">{{ ride.dropoff_location }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Value</span>
+      <span class="value" data-testid="booking-value">£{{ "%.2f"|format(ride.booking_value) }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Vehicle</span>
+      <span class="value" data-testid="vehicle-category">{{ ride.vehicle_category }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Customer</span>
+      <span class="value" data-testid="customer-category">{{ ride.customer_category }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="label">Pickup time</span>
+      <span class="value" data-testid="pickup-time">{{ ride.pickup_time }}</span>
+    </div>
+    {% if ride.notes %}
+    <div class="detail-row">
+      <span class="label">Notes</span>
+      <span class="value" data-testid="notes">{{ ride.notes }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if ride.status == "available" %}
+  <form action="/rides/{{ ride.external_booking_id }}/accept" method="post" class="accept-form">
+    <button type="submit" class="btn-accept" data-testid="btn-accept">Accept Ride</button>
+  </form>
+  {% else %}
+  <div class="accepted-banner" data-testid="accepted-banner">✓ This ride has been accepted</div>
+  {% endif %}
+</div>
+<a href="/rides" class="btn-back" data-testid="btn-back">← Back to rides</a>
+{% endif %}
+
+{% endblock %}

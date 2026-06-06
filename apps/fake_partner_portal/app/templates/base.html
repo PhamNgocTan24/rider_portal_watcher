@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}RidePortal{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a class="brand" href="/rides">🚗 RidePortal</a>
+    <div class="nav-links">
+      <a href="/rides">Rides</a>
+      <a href="/logout">Logout</a>
+    </div>
+    <span class="layout-badge" data-testid="layout-badge">Layout: {{ layout }}</span>
+  </nav>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Admin panel (bottom of every page for demo convenience) -->
+  <footer class="admin-panel">
+    <details>
+      <summary>⚙ Admin Controls</summary>
+      <div class="admin-inner">
+
+        <form action="/admin/publish-job" method="post" class="admin-form">
+          <h4>Publish Demo Job</h4>
+          <label>Pickup <input name="pickup" value="Heathrow Airport T5" /></label>
+          <label>Dropoff <input name="dropoff" value="Mayfair, London" /></label>
+          <label>Value £ <input name="value" type="number" step="0.01" value="120.00" /></label>
+          <label>Vehicle <input name="vehicle" value="Executive Saloon" /></label>
+          <label>Customer category <input name="customer_category" value="corporate" /></label>
+          <label>Pickup time <input name="pickup_time" value="2026-06-07T09:00:00Z" /></label>
+          <label>Notes <input name="notes" value="" /></label>
+          <button type="submit" data-testid="btn-publish-job">Publish Job</button>
+        </form>
+
+        <form action="/admin/switch-layout" method="post" class="admin-form">
+          <h4>Switch Layout</h4>
+          <select name="layout" data-testid="layout-select">
+            <option value="layout_a">Layout A</option>
+            <option value="layout_b">Layout B</option>
+            <option value="broken">Broken</option>
+          </select>
+          <button type="submit" data-testid="btn-switch-layout">Switch</button>
+        </form>
+
+      </div>
+    </details>
+  </footer>
+</body>
+</html>
