@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.database import AsyncSessionLocal, engine
+from app.database import AsyncSessionLocal
+from app.routers import bookings
 
 logger = structlog.get_logger()
 
@@ -13,10 +14,17 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# ---------------------------------------------------------------------------
+# Routers
+# ---------------------------------------------------------------------------
+app.include_router(bookings.router)
 
+
+# ---------------------------------------------------------------------------
+# Startup — run Alembic migrations
+# ---------------------------------------------------------------------------
 @app.on_event("startup")
 async def run_migrations() -> None:
-    """Run Alembic migrations automatically on startup."""
     import asyncio
     from alembic import command
     from alembic.config import Config
@@ -30,6 +38,9 @@ async def run_migrations() -> None:
     logger.info("migrations_complete")
 
 
+# ---------------------------------------------------------------------------
+# Health
+# ---------------------------------------------------------------------------
 @app.get("/health", response_class=JSONResponse, tags=["health"])
 async def health() -> dict:
     """Health check — verifies service is running and DB is reachable."""
