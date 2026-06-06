@@ -177,7 +177,25 @@ A task is done only when:
 - Docs are updated when behavior changes.
 - The next task remains clear.
 
-## 13. Preferred Response Format for Coding Agent
+## 13. Git Workflow Per Task
+
+After completing each task:
+
+1. Commit all changes to the current branch.
+2. Push the branch to origin.
+3. Checkout a new branch for the next task using the naming convention: `task-{number}-{short-description}`.
+
+Example:
+
+```bash
+git add -A
+git commit -m "feat: Task 2 - database setup with SQLAlchemy and Alembic"
+git push -u origin task-2-database-setup
+```
+
+Do not work on the next task on the same branch. Each task gets its own branch off main.
+
+## 14. Preferred Response Format for Coding Agent
 
 After each task, report:
 
