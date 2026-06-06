@@ -45,4 +45,4 @@ COPY . .
 # Artifact directories
 RUN mkdir -p /app/artifacts/screenshots /app/artifacts/html_snapshots
 
-CMD ["python", "-m", "app.main"]
+CMD ["/app/.venv/bin/python", "-m", "app.main"]
