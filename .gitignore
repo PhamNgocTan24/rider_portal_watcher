@@ -1,0 +1,34 @@
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Artifacts (ignore content, keep dirs via .gitkeep)
+artifacts/screenshots/*
+artifacts/html_snapshots/*
+!artifacts/screenshots/.gitkeep
+!artifacts/html_snapshots/.gitkeep
+
+# Docker
+.dockerignore
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp

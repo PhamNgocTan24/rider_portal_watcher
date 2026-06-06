@@ -1,0 +1,85 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: rideportal
+      POSTGRES_USER: rideportal
+      POSTGRES_PASSWORD: rideportal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rideportal -d rideportal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.example
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: rideportal
+      POSTGRES_USER: rideportal
+      POSTGRES_PASSWORD: rideportal
+      DATABASE_URL: postgresql+asyncpg://rideportal:rideportal@postgres:5432/rideportal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - artifacts:/app/artifacts
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  fake-portal:
+    build:
+      context: ./apps/fake_partner_portal
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: ./apps/worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env.example
+    environment:
+      API_BASE_URL: http://api:8000
+      FAKE_PORTAL_BASE_URL: http://fake-portal:3000
+      FAKE_PORTAL_USERNAME: demo
+      FAKE_PORTAL_PASSWORD: demo123
+      WORKER_HEADLESS: "true"
+      WORKER_POLL_INTERVAL_SECONDS: "10"
+      WORKER_SCREENSHOT_DIR: /app/artifacts/screenshots
+      WORKER_HTML_SNAPSHOT_DIR: /app/artifacts/html_snapshots
+    depends_on:
+      api:
+        condition: service_healthy
+      fake-portal:
+        condition: service_healthy
+    volumes:
+      - artifacts:/app/artifacts
+
+volumes:
+  postgres_data:
+  artifacts:
