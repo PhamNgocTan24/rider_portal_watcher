@@ -7,7 +7,7 @@ from app.models.booking_job import BookingJob
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.rule_repository import RuleRepository
 from app.schemas.booking import BookingCreateRequest, BookingDecisionResponse
-from app.services import rule_engine
+from app.services import rule_engine, telegram
 
 logger = structlog.get_logger()
 
@@ -78,6 +78,20 @@ class BookingService:
             status=decision.status,
             reason=decision.reason,
             auto_accept_allowed=decision.auto_accept_allowed,
+        )
+
+        # Telegram notifications (fire-and-forget, non-blocking)
+        await telegram.notify_new_booking(
+            external_booking_id=booking.external_booking_id,
+            portal_name=booking.portal_name,
+            pickup=booking.pickup_location,
+            dropoff=booking.dropoff_location,
+            value=float(booking.booking_value) if booking.booking_value else None,
+        )
+        await telegram.notify_booking_decision(
+            external_booking_id=booking.external_booking_id,
+            status=decision.status,
+            reason=decision.reason,
         )
 
         return BookingDecisionResponse(
