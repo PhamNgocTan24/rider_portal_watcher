@@ -5,7 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking_job import BookingJob
 from app.repositories.booking_repository import BookingRepository
+from app.repositories.rule_repository import RuleRepository
 from app.schemas.booking import BookingCreateRequest, BookingDecisionResponse
+from app.services import rule_engine
 
 logger = structlog.get_logger()
 
@@ -14,20 +16,17 @@ class BookingService:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
         self._repo = BookingRepository(session)
+        self._rule_repo = RuleRepository(session)
 
     async def create_or_get(
         self, req: BookingCreateRequest
     ) -> BookingDecisionResponse:
         """
-        Deduplicate by (portal_name, external_booking_id).
-        If the booking already exists, return the existing record.
-        Otherwise persist it with status 'new' and return it.
-        Rule evaluation is wired in Task 5 — for now the status stays 'new'.
+        Deduplicate → persist → evaluate rule → return decision.
         """
         existing = await self._repo.get_by_portal_and_external_id(
             req.portal_name, req.external_booking_id
         )
-
         if existing:
             logger.info(
                 "booking_duplicate_skipped",
@@ -44,6 +43,9 @@ class BookingService:
                 already_exists=True,
             )
 
+        # ------------------------------------------------------------------
+        # Persist with status "new" first
+        # ------------------------------------------------------------------
         booking = BookingJob(
             external_booking_id=req.external_booking_id,
             portal_name=req.portal_name,
@@ -56,15 +58,26 @@ class BookingService:
             raw_payload=req.raw_payload,
             status="new",
         )
-
         booking = await self._repo.create(booking)
+
+        # ------------------------------------------------------------------
+        # Evaluate active rule
+        # ------------------------------------------------------------------
+        active_rule = await self._rule_repo.get_active_rule()
+        decision = rule_engine.evaluate(booking, active_rule, portal_is_healthy=True)
+
+        booking = await self._repo.update_status(
+            booking, decision.status, decision.reason
+        )
         await self._session.commit()
 
         logger.info(
-            "booking_created",
+            "booking_evaluated",
             id=str(booking.id),
-            portal_name=booking.portal_name,
             external_booking_id=booking.external_booking_id,
+            status=decision.status,
+            reason=decision.reason,
+            auto_accept_allowed=decision.auto_accept_allowed,
         )
 
         return BookingDecisionResponse(
@@ -73,14 +86,12 @@ class BookingService:
             portal_name=booking.portal_name,
             status=booking.status,
             decision_reason=booking.decision_reason,
-            auto_accept_allowed=False,
+            auto_accept_allowed=decision.auto_accept_allowed,
             already_exists=False,
         )
 
     async def mark_auto_accepted(self, booking_id: str) -> BookingJob | None:
-        """Called by worker after it successfully clicks accept on the portal."""
         import uuid as _uuid
-
         try:
             bid = _uuid.UUID(booking_id)
         except ValueError:
@@ -94,6 +105,5 @@ class BookingService:
             booking, "auto_accepted", "Worker confirmed accept click on portal"
         )
         await self._session.commit()
-
         logger.info("booking_auto_accepted", id=str(booking.id))
         return booking
