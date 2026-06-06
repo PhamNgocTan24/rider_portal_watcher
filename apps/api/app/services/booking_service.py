@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+import structlog
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.booking_job import BookingJob
+from app.repositories.booking_repository import BookingRepository
+from app.schemas.booking import BookingCreateRequest, BookingDecisionResponse
+
+logger = structlog.get_logger()
+
+
+class BookingService:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+        self._repo = BookingRepository(session)
+
+    async def create_or_get(
+        self, req: BookingCreateRequest
+    ) -> BookingDecisionResponse:
+        """
+        Deduplicate by (portal_name, external_booking_id).
+        If the booking already exists, return the existing record.
+        Otherwise persist it with status 'new' and return it.
+        Rule evaluation is wired in Task 5 — for now the status stays 'new'.
+        """
+        existing = await self._repo.get_by_portal_and_external_id(
+            req.portal_name, req.external_booking_id
+        )
+
+        if existing:
+            logger.info(
+                "booking_duplicate_skipped",
+                portal_name=req.portal_name,
+                external_booking_id=req.external_booking_id,
+            )
+            return BookingDecisionResponse(
+                id=existing.id,
+                external_booking_id=existing.external_booking_id,
+                portal_name=existing.portal_name,
+                status=existing.status,
+                decision_reason=existing.decision_reason,
+                auto_accept_allowed=False,
+                already_exists=True,
+            )
+
+        booking = BookingJob(
+            external_booking_id=req.external_booking_id,
+            portal_name=req.portal_name,
+            pickup_location=req.pickup_location,
+            dropoff_location=req.dropoff_location,
+            booking_value=req.booking_value,
+            vehicle_category=req.vehicle_category,
+            customer_category=req.customer_category,
+            pickup_time=req.pickup_time,
+            raw_payload=req.raw_payload,
+            status="new",
+        )
+
+        booking = await self._repo.create(booking)
+        await self._session.commit()
+
+        logger.info(
+            "booking_created",
+            id=str(booking.id),
+            portal_name=booking.portal_name,
+            external_booking_id=booking.external_booking_id,
+        )
+
+        return BookingDecisionResponse(
+            id=booking.id,
+            external_booking_id=booking.external_booking_id,
+            portal_name=booking.portal_name,
+            status=booking.status,
+            decision_reason=booking.decision_reason,
+            auto_accept_allowed=False,
+            already_exists=False,
+        )
+
+    async def mark_auto_accepted(self, booking_id: str) -> BookingJob | None:
+        """Called by worker after it successfully clicks accept on the portal."""
+        import uuid as _uuid
+
+        try:
+            bid = _uuid.UUID(booking_id)
+        except ValueError:
+            return None
+
+        booking = await self._repo.get_by_id(bid)
+        if not booking:
+            return None
+
+        booking = await self._repo.update_status(
+            booking, "auto_accepted", "Worker confirmed accept click on portal"
+        )
+        await self._session.commit()
+
+        logger.info("booking_auto_accepted", id=str(booking.id))
+        return booking
