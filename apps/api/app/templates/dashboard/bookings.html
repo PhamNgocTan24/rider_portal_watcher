@@ -1,22 +1,47 @@
 {% extends "base.html" %}
 {% block title %}{{ title }} — RidePortal Watcher{% endblock %}
 {% block content %}
-<h1>{{ title }}</h1>
+
+<!-- Page header -->
+<div class="page-header">
+  <div class="page-title">
+    <div class="page-title-icon">
+      {% if active == 'new' %}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22,12 16,12 14,15 10,15 8,12 2,12"/>
+        <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+      </svg>
+      {% elif active == 'accepted' %}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/>
+      </svg>
+      {% else %}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      {% endif %}
+    </div>
+    <h1>{{ title }}</h1>
+  </div>
+  <div style="font-size:13px; color: var(--text-muted);">
+    {{ bookings | length }} booking{{ 's' if bookings | length != 1 else '' }}
+  </div>
+</div>
 
 <div class="card">
 
-  {# ── Filter bar ─────────────────────────────────────────────── #}
+  <!-- Filter bar -->
   <div class="filter-bar">
 
     <div class="filter-group">
-      <label>🔍 Search</label>
+      <label>Search</label>
       <input
-        type="text"
+        type="search"
         placeholder="Booking ID, pickup, dropoff…"
         data-table="bookings-table"
         data-col="0"
         data-type="fullrow"
-        style="min-width:200px"
       />
     </div>
 
@@ -58,64 +83,91 @@
       <input
         type="number" placeholder="Min" min="0" step="1"
         data-table="bookings-table" data-col="4" data-type="range-min"
-        style="min-width:70px"
       />
-      <span style="align-self:center;color:#b2bec3">–</span>
+      <span class="range-sep">–</span>
       <input
         type="number" placeholder="Max" min="0" step="1"
         data-table="bookings-table" data-col="4" data-type="range-max"
-        style="min-width:70px"
       />
     </div>
 
-    <button class="btn-reset" data-reset-table="bookings-table">Reset</button>
-
-    <div class="filter-count">
-      Showing <strong data-count="bookings-table">{{ bookings | length }}</strong> / {{ bookings | length }}
+    <div class="filter-actions">
+      <button class="btn-reset" data-reset-table="bookings-table">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+        </svg>
+        Reset
+      </button>
+      <div class="filter-count">
+        Showing <strong data-count="bookings-table">{{ bookings | length }}</strong> / {{ bookings | length }}
+      </div>
     </div>
 
-  </div>{# /filter-bar #}
+  </div><!-- /filter-bar -->
 
-  {# ── Table ──────────────────────────────────────────────────── #}
+  <!-- Table -->
   {% if bookings %}
-  <table id="bookings-table">
-    <thead>
-      <tr>
-        {# col 0 #}<th data-sort-col="0">Booking ID</th>
-        {# col 1 #}<th data-sort-col="1">Portal</th>
-        {# col 2 #}<th data-sort-col="2">Pickup</th>
-        {# col 3 #}<th data-sort-col="3">Dropoff</th>
-        {# col 4 #}<th data-sort-col="4">Value</th>
-        {# col 5 #}<th data-sort-col="5">Vehicle</th>
-        {# col 6 #}<th data-sort-col="6">Customer</th>
-        {# col 7 #}<th data-sort-col="7">Pickup Time</th>
-        {# col 8 #}<th data-sort-col="8">Status</th>
-        {# col 9 #}<th>Reason</th>
-        {# col 10 #}<th data-sort-col="10">Detected</th>
-        {# col 11 #}<th>Evidence</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for b in bookings %}
-      <tr>
-        <td class="mono">{{ b.external_booking_id }}</td>
-        <td class="mono">{{ b.portal_name }}</td>
-        <td>{{ b.pickup_location or "—" }}</td>
-        <td>{{ b.dropoff_location or "—" }}</td>
-        <td>{% if b.booking_value %}£{{ "%.2f"|format(b.booking_value|float) }}{% else %}—{% endif %}</td>
-        <td>{{ b.vehicle_category or "—" }}</td>
-        <td>{{ b.customer_category or "—" }}</td>
-        <td class="mono">{{ b.pickup_time.strftime("%Y-%m-%d %H:%M") if b.pickup_time else "—" }}</td>
-        <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
-        <td class="log-msg" title="{{ b.decision_reason or '' }}">{{ b.decision_reason or "—" }}</td>
-        <td class="mono">{{ b.detected_at.strftime("%Y-%m-%d %H:%M") }}</td>
-        <td>{% if b.screenshot_path %}<a href="{{ b.screenshot_path }}" target="_blank" title="Screenshot">📷</a>{% else %}<span style="color:#b2bec3;font-size:12px">none</span>{% endif %}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="table-wrap">
+    <table id="bookings-table">
+      <thead>
+        <tr>
+          {# col 0 #}<th data-sort-col="0">Booking ID</th>
+          {# col 1 #}<th data-sort-col="1">Portal</th>
+          {# col 2 #}<th data-sort-col="2">Pickup</th>
+          {# col 3 #}<th data-sort-col="3">Dropoff</th>
+          {# col 4 #}<th data-sort-col="4">Value</th>
+          {# col 5 #}<th data-sort-col="5">Vehicle</th>
+          {# col 6 #}<th data-sort-col="6">Customer</th>
+          {# col 7 #}<th data-sort-col="7">Pickup Time</th>
+          {# col 8 #}<th data-sort-col="8">Status</th>
+          {# col 9 #}<th>Reason</th>
+          {# col 10 #}<th data-sort-col="10">Detected</th>
+          {# col 11 #}<th>Screenshot</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td class="mono">{{ b.external_booking_id }}</td>
+          <td class="mono">{{ b.portal_name }}</td>
+          <td class="cell-truncate">{{ b.pickup_location or "—" }}</td>
+          <td class="cell-truncate">{{ b.dropoff_location or "—" }}</td>
+          <td class="mono">{% if b.booking_value %}£{{ "%.2f"|format(b.booking_value|float) }}{% else %}—{% endif %}</td>
+          <td>{{ b.vehicle_category or "—" }}</td>
+          <td class="cell-truncate">{{ b.customer_category or "—" }}</td>
+          <td class="mono">{{ b.pickup_time.strftime("%Y-%m-%d %H:%M") if b.pickup_time else "—" }}</td>
+          <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
+          <td class="log-msg" title="{{ b.decision_reason or '' }}">{{ b.decision_reason or "—" }}</td>
+          <td class="mono">{{ b.detected_at.strftime("%Y-%m-%d %H:%M") }}</td>
+          <td>
+            {% if b.screenshot_path %}
+              <a href="{{ b.screenshot_path }}" target="_blank" rel="noopener" class="evidence-cell"
+                 title="Screenshot"
+                 style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;background:var(--color-neutral-bg);color:var(--text-secondary);transition:background 150ms;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </a>
+            {% else %}
+              <span style="color:var(--text-muted); font-size:12px;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% else %}
-  <div class="empty">No bookings found.</div>
+  <div class="empty">
+    <div class="empty-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    </div>
+    <p>No bookings found.</p>
+  </div>
   {% endif %}
 
 </div>
