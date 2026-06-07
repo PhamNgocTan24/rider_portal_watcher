@@ -3,18 +3,89 @@
 {% block content %}
 {% set active = 'logs' %}
 <h1>📜 Automation Logs</h1>
+
 <div class="card">
+
+  {# ── Filter bar ─────────────────────────────────────────────── #}
+  <div class="filter-bar">
+
+    <div class="filter-group">
+      <label>🔍 Search</label>
+      <input
+        type="text"
+        placeholder="Message, step, booking ID…"
+        data-table="logs-table"
+        data-col="0"
+        data-type="fullrow"
+        style="min-width:220px"
+      />
+    </div>
+
+    <div class="filter-group">
+      <label>Level</label>
+      <select data-table="logs-table" data-col="2" data-type="text">
+        <option value="all">All levels</option>
+        <option value="info">info</option>
+        <option value="warning">warning</option>
+        <option value="error">error</option>
+        <option value="critical">critical</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Step</label>
+      <select data-table="logs-table" data-col="3" data-type="text">
+        <option value="all">All steps</option>
+        {% set steps = logs | map(attribute='step') | unique | list | sort %}
+        {% for s in steps %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Booking ID</label>
+      <input
+        type="text"
+        placeholder="e.g. A1B2C3"
+        data-table="logs-table"
+        data-col="4"
+        data-type="text"
+        style="min-width:120px"
+      />
+    </div>
+
+    <div class="filter-group">
+      <label>Portal</label>
+      <select data-table="logs-table" data-col="1" data-type="text">
+        <option value="all">All portals</option>
+        {% set portals = logs | map(attribute='portal_name') | unique | list %}
+        {% for p in portals %}
+        <option value="{{ p }}">{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <button class="btn-reset" data-reset-table="logs-table">Reset</button>
+
+    <div class="filter-count">
+      Showing <strong data-count="logs-table">{{ logs | length }}</strong> / {{ logs | length }}
+    </div>
+
+  </div>{# /filter-bar #}
+
+  {# ── Table ──────────────────────────────────────────────────── #}
   {% if logs %}
-  <table>
+  <table id="logs-table">
     <thead>
       <tr>
-        <th>Time</th>
-        <th>Portal</th>
-        <th>Level</th>
-        <th>Step</th>
-        <th>Booking ID</th>
-        <th>Message</th>
-        <th>Evidence</th>
+        {# col 0 #}<th data-sort-col="0">Time</th>
+        {# col 1 #}<th data-sort-col="1">Portal</th>
+        {# col 2 #}<th data-sort-col="2">Level</th>
+        {# col 3 #}<th data-sort-col="3">Step</th>
+        {# col 4 #}<th data-sort-col="4">Booking ID</th>
+        {# col 5 #}<th>Message</th>
+        {# col 6 #}<th>Evidence</th>
       </tr>
     </thead>
     <tbody>
@@ -42,5 +113,6 @@
   {% else %}
   <div class="empty">No logs yet. Start the worker and publish a job to see activity here.</div>
   {% endif %}
+
 </div>
 {% endblock %}
