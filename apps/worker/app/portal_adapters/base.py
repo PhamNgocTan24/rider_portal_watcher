@@ -54,28 +54,45 @@ async def find_first_available(
 
 
 async def save_screenshot(page: Page, prefix: str, screenshot_dir: str) -> str:
-    """Capture screenshot and return the file path."""
+    """Capture screenshot, save to disk, and return a web-accessible URL path.
+
+    Files are saved under /app/artifacts/ which is served by the API at /artifacts/.
+    Returns a URL path like /artifacts/screenshots/prefix_timestamp.png.
+    """
     os.makedirs(screenshot_dir, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    path = os.path.join(screenshot_dir, f"{prefix}_{ts}.png")
+    filename = f"{prefix}_{ts}.png"
+    fs_path = os.path.join(screenshot_dir, filename)
     try:
-        await page.screenshot(path=path, full_page=True)
-        logger.info("screenshot_saved", path=path)
+        await page.screenshot(path=fs_path, full_page=True)
+        logger.info("screenshot_saved", path=fs_path)
     except Exception as exc:
         logger.warning("screenshot_failed", error=str(exc))
-    return path
+
+    # Convert filesystem path to web URL path served by the API
+    # e.g. /app/artifacts/screenshots/foo.png → /artifacts/screenshots/foo.png
+    url_path = fs_path.replace("/app/artifacts", "/artifacts", 1)
+    return url_path
 
 
 async def save_html_snapshot(page: Page, prefix: str, snapshot_dir: str) -> str:
-    """Save HTML snapshot and return the file path."""
+    """Save HTML snapshot, and return a web-accessible URL path.
+
+    Files are saved under /app/artifacts/ which is served by the API at /artifacts/.
+    Returns a URL path like /artifacts/html_snapshots/prefix_timestamp.html.
+    """
     os.makedirs(snapshot_dir, exist_ok=True)
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    path = os.path.join(snapshot_dir, f"{prefix}_{ts}.html")
+    filename = f"{prefix}_{ts}.html"
+    fs_path = os.path.join(snapshot_dir, filename)
     try:
         content = await page.content()
-        with open(path, "w", encoding="utf-8") as f:
+        with open(fs_path, "w", encoding="utf-8") as f:
             f.write(content)
-        logger.info("html_snapshot_saved", path=path)
+        logger.info("html_snapshot_saved", path=fs_path)
     except Exception as exc:
         logger.warning("html_snapshot_failed", error=str(exc))
-    return path
+
+    # Convert filesystem path to web URL path
+    url_path = fs_path.replace("/app/artifacts", "/artifacts", 1)
+    return url_path
