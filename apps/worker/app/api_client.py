@@ -66,6 +66,17 @@ class ApiClient:
         except Exception as exc:
             logger.warning("api_mark_auto_accepted_failed", error=str(exc))
 
+    async def set_booking_screenshot(self, booking_id: str, screenshot_path: str) -> None:
+        """Attach a screenshot URL to the BookingJob record."""
+        try:
+            resp = await self.client.patch(
+                f"/api/bookings/{booking_id}/screenshot",
+                json={"screenshot_path": screenshot_path},
+            )
+            resp.raise_for_status()
+        except Exception as exc:
+            logger.warning("api_set_booking_screenshot_failed", error=str(exc))
+
     async def booking_exists(self, portal_name: str, external_booking_id: str) -> bool:
         try:
             resp = await self.client.get(
