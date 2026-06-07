@@ -18,7 +18,7 @@
         <th>Status</th>
         <th>Reason</th>
         <th>Detected</th>
-        <th>Screenshot</th>
+        <th>Failure Evidence</th>
       </tr>
     </thead>
     <tbody>
@@ -35,7 +35,7 @@
         <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
         <td class="log-msg">{{ b.decision_reason or "—" }}</td>
         <td class="mono">{{ b.detected_at.strftime("%Y-%m-%d %H:%M") }}</td>
-        <td>{% if b.screenshot_path %}<a href="{{ b.screenshot_path }}" target="_blank">📷</a>{% else %}—{% endif %}</td>
+        <td>{% if b.screenshot_path %}<a href="{{ b.screenshot_path }}" target="_blank" title="Screenshot">📷</a>{% else %}<span style="color:#b2bec3;font-size:12px;">none</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>

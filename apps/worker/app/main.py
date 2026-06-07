@@ -96,6 +96,15 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
         logger.info("poll_no_new_jobs")
         return
 
+    # Log to API that new jobs were found
+    await api.post_log({
+        "portal_name": PORTAL_NAME,
+        "level": "info",
+        "step": "list_jobs",
+        "message": f"Found {len(new_ids)} new job(s) to process: {', '.join(new_ids)}",
+        "metadata": {"new_ids": new_ids, "total_visible": len(job_ids)},
+    })
+
     # 3. Process each new job
     for external_id in new_ids:
         seen_ids.add(external_id)
@@ -116,6 +125,25 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
             await _handle_generic_failure(adapter, api, external_id, "extract_job_detail", exc)
             continue
 
+        # Log successful extraction
+        await api.post_log({
+            "portal_name": PORTAL_NAME,
+            "level": "info",
+            "step": "extract_job_detail",
+            "external_booking_id": external_id,
+            "message": (
+                f"Extracted booking: {detail.get('pickup_location')} → {detail.get('dropoff_location')}, "
+                f"£{detail.get('booking_value')}, {detail.get('vehicle_category')}, {detail.get('customer_category')}"
+            ),
+            "metadata": {
+                "pickup": detail.get("pickup_location"),
+                "dropoff": detail.get("dropoff_location"),
+                "value": detail.get("booking_value"),
+                "vehicle": detail.get("vehicle_category"),
+                "customer": detail.get("customer_category"),
+            },
+        })
+
         # POST to API → get decision
         try:
             decision = await api.post_booking(detail)
@@ -130,15 +158,34 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
             })
             continue
 
+        status = decision.get("status")
+        reason = decision.get("decision_reason")
+        auto_accept = decision.get("auto_accept_allowed", False)
+
         logger.info(
             "booking_processed",
             external_booking_id=external_id,
-            status=decision.get("status"),
-            auto_accept_allowed=decision.get("auto_accept_allowed"),
+            status=status,
+            auto_accept_allowed=auto_accept,
         )
 
+        # Log rule evaluation result to API
+        await api.post_log({
+            "portal_name": PORTAL_NAME,
+            "level": "info",
+            "step": "rule_evaluation",
+            "external_booking_id": external_id,
+            "message": f"Decision: {status} — {reason}",
+            "metadata": {
+                "status": status,
+                "decision_reason": reason,
+                "auto_accept_allowed": auto_accept,
+                "already_exists": decision.get("already_exists", False),
+            },
+        })
+
         # Auto-accept if API says so
-        if decision.get("auto_accept_allowed") and decision.get("status") == "accepted_candidate":
+        if auto_accept and status == "accepted_candidate":
             await _try_auto_accept(adapter, api, external_id, decision.get("id"))
 
 
