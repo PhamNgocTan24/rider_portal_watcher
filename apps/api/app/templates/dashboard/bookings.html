@@ -2,23 +2,97 @@
 {% block title %}{{ title }} — RidePortal Watcher{% endblock %}
 {% block content %}
 <h1>{{ title }}</h1>
+
 <div class="card">
+
+  {# ── Filter bar ─────────────────────────────────────────────── #}
+  <div class="filter-bar">
+
+    <div class="filter-group">
+      <label>🔍 Search</label>
+      <input
+        type="text"
+        placeholder="Booking ID, pickup, dropoff…"
+        data-table="bookings-table"
+        data-col="0"
+        data-type="fullrow"
+        style="min-width:200px"
+      />
+    </div>
+
+    <div class="filter-group">
+      <label>Portal</label>
+      <select data-table="bookings-table" data-col="1" data-type="text">
+        <option value="all">All portals</option>
+        {% set portals = bookings | map(attribute='portal_name') | unique | list %}
+        {% for p in portals %}
+        <option value="{{ p }}">{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Vehicle</label>
+      <select data-table="bookings-table" data-col="5" data-type="text">
+        <option value="all">All vehicles</option>
+        {% set vehicles = bookings | selectattr('vehicle_category') | map(attribute='vehicle_category') | unique | list %}
+        {% for v in vehicles %}
+        <option value="{{ v }}">{{ v }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Customer</label>
+      <select data-table="bookings-table" data-col="6" data-type="text">
+        <option value="all">All customers</option>
+        {% set cats = bookings | selectattr('customer_category') | map(attribute='customer_category') | unique | list %}
+        {% for c in cats %}
+        <option value="{{ c }}">{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="filter-group range-pair">
+      <label>Value £</label>
+      <input
+        type="number" placeholder="Min" min="0" step="1"
+        data-table="bookings-table" data-col="4" data-type="range-min"
+        style="min-width:70px"
+      />
+      <span style="align-self:center;color:#b2bec3">–</span>
+      <input
+        type="number" placeholder="Max" min="0" step="1"
+        data-table="bookings-table" data-col="4" data-type="range-max"
+        style="min-width:70px"
+      />
+    </div>
+
+    <button class="btn-reset" data-reset-table="bookings-table">Reset</button>
+
+    <div class="filter-count">
+      Showing <strong data-count="bookings-table">{{ bookings | length }}</strong> / {{ bookings | length }}
+    </div>
+
+  </div>{# /filter-bar #}
+
+  {# ── Table ──────────────────────────────────────────────────── #}
   {% if bookings %}
-  <table>
+  <table id="bookings-table">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Portal</th>
-        <th>Pickup</th>
-        <th>Dropoff</th>
-        <th>Value</th>
-        <th>Vehicle</th>
-        <th>Customer</th>
-        <th>Pickup Time</th>
-        <th>Status</th>
-        <th>Reason</th>
-        <th>Detected</th>
-        <th>Failure Evidence</th>
+        {# col 0 #}<th data-sort-col="0">Booking ID</th>
+        {# col 1 #}<th data-sort-col="1">Portal</th>
+        {# col 2 #}<th data-sort-col="2">Pickup</th>
+        {# col 3 #}<th data-sort-col="3">Dropoff</th>
+        {# col 4 #}<th data-sort-col="4">Value</th>
+        {# col 5 #}<th data-sort-col="5">Vehicle</th>
+        {# col 6 #}<th data-sort-col="6">Customer</th>
+        {# col 7 #}<th data-sort-col="7">Pickup Time</th>
+        {# col 8 #}<th data-sort-col="8">Status</th>
+        {# col 9 #}<th>Reason</th>
+        {# col 10 #}<th data-sort-col="10">Detected</th>
+        {# col 11 #}<th>Evidence</th>
       </tr>
     </thead>
     <tbody>
@@ -33,9 +107,9 @@
         <td>{{ b.customer_category or "—" }}</td>
         <td class="mono">{{ b.pickup_time.strftime("%Y-%m-%d %H:%M") if b.pickup_time else "—" }}</td>
         <td><span class="badge badge-{{ b.status }}">{{ b.status }}</span></td>
-        <td class="log-msg">{{ b.decision_reason or "—" }}</td>
+        <td class="log-msg" title="{{ b.decision_reason or '' }}">{{ b.decision_reason or "—" }}</td>
         <td class="mono">{{ b.detected_at.strftime("%Y-%m-%d %H:%M") }}</td>
-        <td>{% if b.screenshot_path %}<a href="{{ b.screenshot_path }}" target="_blank" title="Screenshot">📷</a>{% else %}<span style="color:#b2bec3;font-size:12px;">none</span>{% endif %}</td>
+        <td>{% if b.screenshot_path %}<a href="{{ b.screenshot_path }}" target="_blank" title="Screenshot">📷</a>{% else %}<span style="color:#b2bec3;font-size:12px">none</span>{% endif %}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -43,5 +117,6 @@
   {% else %}
   <div class="empty">No bookings found.</div>
   {% endif %}
+
 </div>
 {% endblock %}
