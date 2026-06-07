@@ -14,27 +14,33 @@
         <th>Step</th>
         <th>Booking ID</th>
         <th>Message</th>
-        <th>Screenshot</th>
-        <th>HTML Snapshot</th>
+        <th>Evidence</th>
       </tr>
     </thead>
     <tbody>
       {% for log in logs %}
-      <tr>
+      <tr class="log-row-{{ log.level }}">
         <td class="mono">{{ log.created_at.strftime("%Y-%m-%d %H:%M:%S") }}</td>
         <td class="mono">{{ log.portal_name }}</td>
         <td><span class="badge badge-{{ log.level }}">{{ log.level }}</span></td>
         <td class="mono">{{ log.step }}</td>
         <td class="mono">{{ log.external_booking_id or "—" }}</td>
-        <td class="log-msg">{{ log.message }}</td>
-        <td>{% if log.screenshot_path %}<a href="{{ log.screenshot_path }}" target="_blank">📷</a>{% else %}—{% endif %}</td>
-        <td>{% if log.html_snapshot_path %}<a href="{{ log.html_snapshot_path }}" target="_blank">📄</a>{% else %}—{% endif %}</td>
+        <td class="log-msg" title="{{ log.message }}">{{ log.message }}</td>
+        <td class="evidence-cell">
+          {% if log.screenshot_path %}
+            <a href="{{ log.screenshot_path }}" target="_blank" title="Screenshot">📷</a>
+          {% endif %}
+          {% if log.html_snapshot_path %}
+            <a href="{{ log.html_snapshot_path }}" target="_blank" title="HTML Snapshot">📄</a>
+          {% endif %}
+          {% if not log.screenshot_path and not log.html_snapshot_path %}—{% endif %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
   {% else %}
-  <div class="empty">No logs yet.</div>
+  <div class="empty">No logs yet. Start the worker and publish a job to see activity here.</div>
   {% endif %}
 </div>
 {% endblock %}
