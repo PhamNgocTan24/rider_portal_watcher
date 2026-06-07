@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}RidePortal Watcher{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="brand">🚗 RidePortal<br><small>Watcher</small></div>
+    <ul>
+      <li><a href="/" {% if active == 'overview' %}class="active"{% endif %}>📊 Overview</a></li>
+      <li><a href="/bookings/new" {% if active == 'new' %}class="active"{% endif %}>🆕 New</a></li>
+      <li><a href="/bookings/accepted" {% if active == 'accepted' %}class="active"{% endif %}>✅ Accepted</a></li>
+      <li><a href="/bookings/rejected" {% if active == 'rejected' %}class="active"{% endif %}>❌ Rejected</a></li>
+      <li><a href="/rules" {% if active == 'rules' %}class="active"{% endif %}>📋 Rules</a></li>
+      <li><a href="/logs" {% if active == 'logs' %}class="active"{% endif %}>📜 Logs</a></li>
+      <li><a href="/portal-status" {% if active == 'portals' %}class="active"{% endif %}>🔌 Portal Status</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <a href="/docs" target="_blank">API Docs ↗</a>
+    </div>
+  </nav>
+
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
