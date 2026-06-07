@@ -169,6 +169,15 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
             auto_accept_allowed=auto_accept,
         )
 
+        # For rejected bookings: capture screenshot of the portal as evidence
+        rejection_screenshot_path: str | None = None
+        if status == "rejected":
+            page = adapter._page
+            if page and not page.is_closed():
+                rejection_screenshot_path = await save_screenshot(
+                    page, "rejected", settings.worker_screenshot_dir
+                )
+
         # Log rule evaluation result to API
         await api.post_log({
             "portal_name": PORTAL_NAME,
@@ -176,6 +185,7 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
             "step": "rule_evaluation",
             "external_booking_id": external_id,
             "message": f"Decision: {status} — {reason}",
+            "screenshot_path": rejection_screenshot_path,
             "metadata": {
                 "status": status,
                 "decision_reason": reason,
