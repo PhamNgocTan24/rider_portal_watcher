@@ -40,6 +40,7 @@ app = FastAPI(
 # Static files
 # ---------------------------------------------------------------------------
 app.mount("/static", StaticFiles(directory="/app/app/static"), name="static")
+app.mount("/artifacts", StaticFiles(directory="/app/artifacts"), name="artifacts")
 
 # ---------------------------------------------------------------------------
 # Routers
