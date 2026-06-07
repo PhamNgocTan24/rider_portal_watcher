@@ -177,6 +177,10 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
                 rejection_screenshot_path = await save_screenshot(
                     page, "rejected", settings.worker_screenshot_dir
                 )
+                # Also update the BookingJob record so it's visible in the bookings dashboard
+                booking_id = decision.get("id")
+                if booking_id and rejection_screenshot_path:
+                    await api.set_booking_screenshot(booking_id, rejection_screenshot_path)
 
         # Log rule evaluation result to API
         await api.post_log({

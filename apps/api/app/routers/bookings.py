@@ -48,6 +48,30 @@ async def mark_auto_accepted(
     return BookingResponse.model_validate(booking)
 
 
+@router.patch("/{booking_id}/screenshot", response_model=BookingResponse)
+async def set_screenshot(
+    booking_id: str,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+) -> BookingResponse:
+    """Worker calls this to attach a screenshot URL to a booking record."""
+    import uuid
+    try:
+        bid = uuid.UUID(booking_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid booking ID format")
+
+    repo = BookingRepository(db)
+    booking = await repo.get_by_id(bid)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    booking.screenshot_path = payload.get("screenshot_path")
+    await db.commit()
+    await db.refresh(booking)
+    return BookingResponse.model_validate(booking)
+
+
 @router.get("", response_model=list[BookingResponse])
 async def list_bookings(
     status: str | None = None,
