@@ -20,8 +20,8 @@ async def overview(request: Request, db: AsyncSession = Depends(get_db)) -> HTML
     booking_repo = BookingRepository(db)
     all_bookings = await booking_repo.list_by_status()
     counts = {
-        "new": sum(1 for b in all_bookings if b.status == "new"),
-        "accepted": sum(1 for b in all_bookings if b.status in ("accepted_candidate", "auto_accepted")),
+        "new": sum(1 for b in all_bookings if b.status == "accepted_candidate"),
+        "accepted": sum(1 for b in all_bookings if b.status == "auto_accepted"),
         "rejected": sum(1 for b in all_bookings if b.status == "rejected"),
         "total": len(all_bookings),
     }
@@ -39,7 +39,10 @@ async def overview(request: Request, db: AsyncSession = Depends(get_db)) -> HTML
 @router.get("/bookings/new", response_class=HTMLResponse)
 async def bookings_new(request: Request, db: AsyncSession = Depends(get_db)) -> HTMLResponse:
     repo = BookingRepository(db)
-    bookings = await repo.list_by_status("new")
+    # "New" bookings = accepted_candidate (awaiting operator review or auto-accept)
+    # Status "new" only exists for milliseconds before rule evaluation,
+    # so we show accepted_candidate here — these are actionable items.
+    bookings = await repo.list_by_status("accepted_candidate")
     return templates.TemplateResponse("dashboard/bookings.html", {
         "request": request, "bookings": bookings,
         "title": "New Bookings", "active": "new",
@@ -49,9 +52,9 @@ async def bookings_new(request: Request, db: AsyncSession = Depends(get_db)) -> 
 @router.get("/bookings/accepted", response_class=HTMLResponse)
 async def bookings_accepted(request: Request, db: AsyncSession = Depends(get_db)) -> HTMLResponse:
     repo = BookingRepository(db)
-    accepted = await repo.list_by_status("accepted_candidate")
-    auto = await repo.list_by_status("auto_accepted")
-    bookings = list(accepted) + list(auto)
+    # "Accepted" = auto_accepted (worker confirmed click on portal)
+    bookings = await repo.list_by_status("auto_accepted")
+    bookings = list(bookings)
     bookings.sort(key=lambda b: b.detected_at, reverse=True)
     return templates.TemplateResponse("dashboard/bookings.html", {
         "request": request, "bookings": bookings,
