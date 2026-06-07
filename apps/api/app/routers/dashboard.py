@@ -32,6 +32,7 @@ async def overview(request: Request, db: AsyncSession = Depends(get_db)) -> HTML
     return templates.TemplateResponse("dashboard/overview.html", {
         "request": request, "counts": counts,
         "portals": portals, "recent_logs": recent_logs,
+        "active": "overview",
     })
 
 
@@ -73,7 +74,7 @@ async def rules_page(request: Request, db: AsyncSession = Depends(get_db)) -> HT
     repo = RuleRepository(db)
     rules = await repo.list_all()
     return templates.TemplateResponse("dashboard/rules.html", {
-        "request": request, "rules": rules,
+        "request": request, "rules": rules, "active": "rules",
     })
 
 
@@ -82,7 +83,7 @@ async def logs_page(request: Request, db: AsyncSession = Depends(get_db)) -> HTM
     repo = LogRepository(db)
     logs = await repo.list_recent(limit=200)
     return templates.TemplateResponse("dashboard/logs.html", {
-        "request": request, "logs": logs,
+        "request": request, "logs": logs, "active": "logs",
     })
 
 
@@ -91,5 +92,5 @@ async def portal_status_page(request: Request, db: AsyncSession = Depends(get_db
     repo = PortalStatusRepository(db)
     portals = await repo.list_all()
     return templates.TemplateResponse("dashboard/portal_status.html", {
-        "request": request, "portals": portals,
+        "request": request, "portals": portals, "active": "portals",
     })

@@ -7,25 +7,128 @@
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
+
+  <!-- ===== SIDEBAR ===== -->
   <nav class="sidebar">
-    <div class="brand">🚗 RidePortal<br><small>Watcher</small></div>
-    <ul>
-      <li><a href="/" {% if active == 'overview' %}class="active"{% endif %}>📊 Overview</a></li>
-      <li><a href="/bookings/new" {% if active == 'new' %}class="active"{% endif %}>🆕 New</a></li>
-      <li><a href="/bookings/accepted" {% if active == 'accepted' %}class="active"{% endif %}>✅ Accepted</a></li>
-      <li><a href="/bookings/rejected" {% if active == 'rejected' %}class="active"{% endif %}>❌ Rejected</a></li>
-      <li><a href="/rules" {% if active == 'rules' %}class="active"{% endif %}>📋 Rules</a></li>
-      <li><a href="/logs" {% if active == 'logs' %}class="active"{% endif %}>📜 Logs</a></li>
-      <li><a href="/portal-status" {% if active == 'portals' %}class="active"{% endif %}>🔌 Portal Status</a></li>
-    </ul>
+
+    <div class="brand">
+      <div class="brand-icon">
+        <!-- car / vehicle icon -->
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 17H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+          <circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>
+          <path d="M9 5h2l2 4H7l2-4z"/>
+          <path d="M13 17h4a2 2 0 0 0 2-2v-1h2"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-name">RidePortal</div>
+        <div class="brand-sub">Watcher</div>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Monitor</div>
+      <ul>
+        <li>
+          <a href="/" {% if active == 'overview' %}class="active"{% endif %}>
+            <!-- chart-bar -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+            </svg>
+            <span>Overview</span>
+          </a>
+        </li>
+        <li>
+          <a href="/portal-status" {% if active == 'portals' %}class="active"{% endif %}>
+            <!-- server / plug -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+              <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+            </svg>
+            <span>Portal Status</span>
+          </a>
+        </li>
+        <li>
+          <a href="/logs" {% if active == 'logs' %}class="active"{% endif %}>
+            <!-- scroll / list -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/>
+            </svg>
+            <span>Logs</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section-label">Bookings</div>
+      <ul>
+        <li>
+          <a href="/bookings/new" {% if active == 'new' %}class="active"{% endif %}>
+            <!-- inbox / new -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22,12 16,12 14,15 10,15 8,12 2,12"/>
+              <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+            </svg>
+            <span>New</span>
+          </a>
+        </li>
+        <li>
+          <a href="/bookings/accepted" {% if active == 'accepted' %}class="active"{% endif %}>
+            <!-- check-circle -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22,4 12,14.01 9,11.01"/>
+            </svg>
+            <span>Accepted</span>
+          </a>
+        </li>
+        <li>
+          <a href="/bookings/rejected" {% if active == 'rejected' %}class="active"{% endif %}>
+            <!-- x-circle -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+            <span>Rejected</span>
+          </a>
+        </li>
+      </ul>
+
+      <div class="nav-section-label">Config</div>
+      <ul>
+        <li>
+          <a href="/rules" {% if active == 'rules' %}class="active"{% endif %}>
+            <!-- sliders -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+              <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+              <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+            <span>Rules</span>
+          </a>
+        </li>
+      </ul>
+    </div><!-- /sidebar-nav -->
+
     <div class="sidebar-footer">
-      <a href="/docs" target="_blank">API Docs ↗</a>
+      <a href="/docs" target="_blank" rel="noopener">
+        <!-- external link -->
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        <span>API Docs</span>
+      </a>
     </div>
   </nav>
+  <!-- ===== /SIDEBAR ===== -->
 
   <main class="content">
     {% block content %}{% endblock %}
   </main>
+
   <script src="/static/table_controls.js"></script>
 </body>
 </html>

@@ -1,49 +1,119 @@
 {% extends "base.html" %}
 {% block title %}Rules — RidePortal Watcher{% endblock %}
 {% block content %}
-{% set active = 'rules' %}
-<h1>📋 Business Rules</h1>
+
+<!-- Page header -->
+<div class="page-header">
+  <div class="page-title">
+    <div class="page-title-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+        <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+        <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+      </svg>
+    </div>
+    <h1>Business Rules</h1>
+  </div>
+  {% if rules %}
+  <div style="font-size:13px; color: var(--text-muted);">
+    {{ rules | length }} rule{{ 's' if rules | length != 1 else '' }}
+    &nbsp;·&nbsp;
+    {% set active_count = rules | selectattr('is_active') | list | length %}
+    <span style="color:var(--color-success); font-weight:600;">{{ active_count }} active</span>
+  </div>
+  {% endif %}
+</div>
 
 {% if rules %}
   {% for rule in rules %}
   <div class="rule-card">
-    <h3>
-      {{ rule.name }}
-      {% if rule.is_active %}
-        <span class="badge badge-healthy" style="font-size:10px; margin-left:8px;">ACTIVE</span>
-      {% else %}
-        <span class="badge badge-new" style="font-size:10px; margin-left:8px;">INACTIVE</span>
-      {% endif %}
-    </h3>
+    <div class="rule-card-header">
+      <h3>{{ rule.name }}</h3>
+      <div class="rule-card-badges">
+        {% if rule.auto_accept %}
+          <span class="badge badge-info">Auto-accept ON</span>
+        {% else %}
+          <span class="badge" style="background:var(--color-neutral-bg);color:var(--text-muted);">Auto-accept OFF</span>
+        {% endif %}
+        {% if rule.is_active %}
+          <span class="badge badge-healthy">
+            <span class="badge-dot"></span>
+            Active
+          </span>
+        {% else %}
+          <span class="badge badge-new">Inactive</span>
+        {% endif %}
+      </div>
+    </div>
+
     <div class="rule-grid">
       <div class="rule-field">
         <div class="label">Min Booking Value</div>
-        <div class="value">{% if rule.min_booking_value %}£{{ "%.2f"|format(rule.min_booking_value|float) }}{% else %}Any{% endif %}</div>
+        <div class="value">
+          {% if rule.min_booking_value %}
+            <span style="font-family:'Fira Code',monospace;">£{{ "%.2f"|format(rule.min_booking_value|float) }}</span>
+          {% else %}
+            <span style="color:var(--text-muted);">Any</span>
+          {% endif %}
+        </div>
       </div>
-      <div class="rule-field">
-        <div class="label">Auto-Accept</div>
-        <div class="value">{{ "✅ Enabled" if rule.auto_accept else "❌ Disabled" }}</div>
-      </div>
-      <div class="rule-field">
-        <div class="label">ID</div>
-        <div class="value mono">{{ rule.id }}</div>
-      </div>
+
       <div class="rule-field">
         <div class="label">Allowed Pickups</div>
-        <div class="value">{{ rule.allowed_pickup_locations | join(", ") if rule.allowed_pickup_locations else "Any" }}</div>
+        <div class="value">
+          {% if rule.allowed_pickup_locations %}
+            {{ rule.allowed_pickup_locations | join(", ") }}
+          {% else %}
+            <span style="color:var(--text-muted);">Any</span>
+          {% endif %}
+        </div>
       </div>
+
       <div class="rule-field">
         <div class="label">Allowed Vehicles</div>
-        <div class="value">{{ rule.allowed_vehicle_categories | join(", ") if rule.allowed_vehicle_categories else "Any" }}</div>
+        <div class="value">
+          {% if rule.allowed_vehicle_categories %}
+            {{ rule.allowed_vehicle_categories | join(", ") }}
+          {% else %}
+            <span style="color:var(--text-muted);">Any</span>
+          {% endif %}
+        </div>
       </div>
+
       <div class="rule-field">
         <div class="label">Allowed Customers</div>
-        <div class="value">{{ rule.allowed_customer_categories | join(", ") if rule.allowed_customer_categories else "Any" }}</div>
+        <div class="value">
+          {% if rule.allowed_customer_categories %}
+            {{ rule.allowed_customer_categories | join(", ") }}
+          {% else %}
+            <span style="color:var(--text-muted);">Any</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="rule-field" style="grid-column: span 2;">
+        <div class="label">Rule ID</div>
+        <div class="value mono">{{ rule.id }}</div>
       </div>
     </div>
   </div>
   {% endfor %}
+
 {% else %}
-  <div class="empty">No rules configured.</div>
+  <div class="card">
+    <div class="empty">
+      <div class="empty-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+        </svg>
+      </div>
+      <p>No rules configured. Add a business rule to enable auto-accept automation.</p>
+    </div>
+  </div>
 {% endif %}
+
 {% endblock %}
