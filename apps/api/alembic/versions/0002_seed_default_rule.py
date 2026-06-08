@@ -33,7 +33,7 @@ def upgrade() -> None:
             ARRAY['Heathrow','Gatwick','Stansted','Luton','City Airport','Mayfair'],
             ARRAY['Executive Saloon','Saloon','MPV','Estate','Minibus'],
             ARRAY['corporate','leisure','vip'],
-            false, true,
+            true, true,
             now(), now()
         )
         ON CONFLICT DO NOTHING
