@@ -4,6 +4,7 @@ import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking_job import BookingJob
+from app.models.booking_status import BookingStatus
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.rule_repository import RuleRepository
 from app.schemas.booking import BookingCreateRequest, BookingDecisionResponse
@@ -56,7 +57,7 @@ class BookingService:
             customer_category=req.customer_category,
             pickup_time=req.pickup_time,
             raw_payload=req.raw_payload,
-            status="new",
+            status=BookingStatus.NEW.value,
         )
         booking = await self._repo.create(booking)
 
@@ -75,7 +76,7 @@ class BookingService:
             "booking_evaluated",
             id=str(booking.id),
             external_booking_id=booking.external_booking_id,
-            status=decision.status,
+            status=booking.status,
             reason=decision.reason,
             auto_accept_allowed=decision.auto_accept_allowed,
         )
@@ -90,7 +91,7 @@ class BookingService:
         )
         await telegram.notify_booking_decision(
             external_booking_id=booking.external_booking_id,
-            status=decision.status,
+            status=booking.status,
             reason=decision.reason,
         )
 
@@ -105,6 +106,7 @@ class BookingService:
         )
 
     async def mark_auto_accepted(self, booking_id: str) -> BookingJob | None:
+        """Worker confirmed it clicked accept on the portal."""
         import uuid as _uuid
         try:
             bid = _uuid.UUID(booking_id)
@@ -116,8 +118,73 @@ class BookingService:
             return None
 
         booking = await self._repo.update_status(
-            booking, "auto_accepted", "Worker confirmed accept click on portal"
+            booking,
+            BookingStatus.AUTO_ACCEPTED,
+            "Worker confirmed accept click on portal",
         )
         await self._session.commit()
         logger.info("booking_auto_accepted", id=str(booking.id))
+        return booking
+
+    async def mark_manually_accepted(self, booking_id: str) -> BookingJob | None:
+        """Operator confirmed acceptance via dashboard."""
+        import uuid as _uuid
+        try:
+            bid = _uuid.UUID(booking_id)
+        except ValueError:
+            return None
+
+        booking = await self._repo.get_by_id(bid)
+        if not booking:
+            return None
+
+        booking = await self._repo.update_status(
+            booking,
+            BookingStatus.MANUALLY_ACCEPTED,
+            "Operator confirmed acceptance via dashboard",
+        )
+        await self._session.commit()
+        logger.info("booking_manually_accepted", id=str(booking.id))
+        return booking
+
+    async def mark_failed_to_accept(
+        self, booking_id: str, reason: str = "Auto-accept failed on portal"
+    ) -> BookingJob | None:
+        """Worker tried to click accept but it failed (job taken, portal error, etc.)."""
+        import uuid as _uuid
+        try:
+            bid = _uuid.UUID(booking_id)
+        except ValueError:
+            return None
+
+        booking = await self._repo.get_by_id(bid)
+        if not booking:
+            return None
+
+        booking = await self._repo.update_status(
+            booking, BookingStatus.FAILED_TO_ACCEPT, reason
+        )
+        await self._session.commit()
+        logger.warning("booking_failed_to_accept", id=str(booking.id), reason=reason)
+        return booking
+
+    async def mark_expired(
+        self, booking_id: str, reason: str = "Job no longer available on portal"
+    ) -> BookingJob | None:
+        """Job was accepted_candidate but is no longer available (taken by competitor / timeout)."""
+        import uuid as _uuid
+        try:
+            bid = _uuid.UUID(booking_id)
+        except ValueError:
+            return None
+
+        booking = await self._repo.get_by_id(bid)
+        if not booking:
+            return None
+
+        booking = await self._repo.update_status(
+            booking, BookingStatus.EXPIRED, reason
+        )
+        await self._session.commit()
+        logger.info("booking_expired", id=str(booking.id), reason=reason)
         return booking

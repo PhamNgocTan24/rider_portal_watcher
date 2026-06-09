@@ -420,6 +420,9 @@ tbody tr:hover td { background: #F8FAFC; }
 .badge-new               { background: var(--color-neutral-bg); color: var(--color-neutral); }
 .badge-accepted_candidate { background: #DBEAFE; color: #1D4ED8; }
 .badge-auto_accepted     { background: var(--color-success-bg); color: var(--color-success); }
+.badge-manually_accepted { background: #D1FAE5; color: #065F46; }
+.badge-failed_to_accept  { background: #FEE2E2; color: #991B1B; }
+.badge-expired           { background: #F3F4F6; color: #6B7280; }
 .badge-rejected          { background: var(--color-danger-bg);  color: var(--color-danger); }
 .badge-failed            { background: #FEE2E2; color: #B91C1C; }
 

@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.models.booking_status import BookingStatus, ACCEPTED_STATUSES
 from app.repositories.booking_repository import BookingRepository
 from app.repositories.log_repository import LogRepository
 from app.repositories.portal_status_repository import PortalStatusRepository
@@ -20,9 +21,9 @@ async def overview(request: Request, db: AsyncSession = Depends(get_db)) -> HTML
     booking_repo = BookingRepository(db)
     all_bookings = await booking_repo.list_by_status()
     counts = {
-        "new": sum(1 for b in all_bookings if b.status == "accepted_candidate"),
-        "accepted": sum(1 for b in all_bookings if b.status == "auto_accepted"),
-        "rejected": sum(1 for b in all_bookings if b.status == "rejected"),
+        "new": sum(1 for b in all_bookings if b.status == BookingStatus.ACCEPTED_CANDIDATE.value),
+        "accepted": sum(1 for b in all_bookings if b.status in {s.value for s in ACCEPTED_STATUSES}),
+        "rejected": sum(1 for b in all_bookings if b.status == BookingStatus.REJECTED.value),
         "total": len(all_bookings),
     }
     portal_repo = PortalStatusRepository(db)
@@ -39,10 +40,7 @@ async def overview(request: Request, db: AsyncSession = Depends(get_db)) -> HTML
 @router.get("/bookings/new", response_class=HTMLResponse)
 async def bookings_new(request: Request, db: AsyncSession = Depends(get_db)) -> HTMLResponse:
     repo = BookingRepository(db)
-    # "New" bookings = accepted_candidate (awaiting operator review or auto-accept)
-    # Status "new" only exists for milliseconds before rule evaluation,
-    # so we show accepted_candidate here — these are actionable items.
-    bookings = await repo.list_by_status("accepted_candidate")
+    bookings = await repo.list_by_status(BookingStatus.ACCEPTED_CANDIDATE.value)
     return templates.TemplateResponse("dashboard/bookings.html", {
         "request": request, "bookings": bookings,
         "title": "New Bookings", "active": "new",
@@ -52,8 +50,8 @@ async def bookings_new(request: Request, db: AsyncSession = Depends(get_db)) -> 
 @router.get("/bookings/accepted", response_class=HTMLResponse)
 async def bookings_accepted(request: Request, db: AsyncSession = Depends(get_db)) -> HTMLResponse:
     repo = BookingRepository(db)
-    # "Accepted" = auto_accepted (worker confirmed click on portal)
-    bookings = await repo.list_by_status("auto_accepted")
+    # "Accepted" = auto_accepted + manually_accepted
+    bookings = await repo.list_by_statuses([s.value for s in ACCEPTED_STATUSES])
     bookings = list(bookings)
     bookings.sort(key=lambda b: b.detected_at, reverse=True)
     return templates.TemplateResponse("dashboard/bookings.html", {
@@ -65,7 +63,7 @@ async def bookings_accepted(request: Request, db: AsyncSession = Depends(get_db)
 @router.get("/bookings/rejected", response_class=HTMLResponse)
 async def bookings_rejected(request: Request, db: AsyncSession = Depends(get_db)) -> HTMLResponse:
     repo = BookingRepository(db)
-    bookings = await repo.list_by_status("rejected")
+    bookings = await repo.list_by_status(BookingStatus.REJECTED.value)
     return templates.TemplateResponse("dashboard/bookings.html", {
         "request": request, "bookings": bookings,
         "title": "Rejected Bookings", "active": "rejected",

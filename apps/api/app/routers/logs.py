@@ -45,4 +45,4 @@ async def list_logs(
 ) -> list[LogResponse]:
     repo = LogRepository(db)
     logs = await repo.list_recent(limit=limit)
-    return [LogResponse.model_validate(l) for l in logs]
+    return [LogResponse.model_validate(log_entry) for log_entry in logs]

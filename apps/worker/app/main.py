@@ -203,6 +203,51 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
             await _try_auto_accept(adapter, api, external_id, decision.get("id"))
 
 
+async def run_poll_back(adapter: FakeRidePortalAdapter, api: ApiClient) -> None:
+    """
+    Poll-back: check all accepted_candidate bookings against the portal.
+    If a job is no longer listed on the portal, it was taken by someone else → mark expired.
+    Runs every poll cycle alongside run_poll_cycle.
+    """
+    candidates = await api.list_accepted_candidates()
+    if not candidates:
+        return
+
+    # Get current live job IDs from portal
+    try:
+        live_ids = set(await adapter.list_available_jobs())
+    except Exception as exc:
+        logger.warning("poll_back_list_failed", error=str(exc))
+        return
+
+    for booking in candidates:
+        external_id = booking.get("external_booking_id")
+        booking_id  = booking.get("id")
+        portal_name = booking.get("portal_name")
+
+        # Only check jobs from this worker's portal
+        if portal_name != PORTAL_NAME:
+            continue
+
+        if external_id not in live_ids:
+            logger.info(
+                "poll_back_job_gone",
+                external_booking_id=external_id,
+                reason="No longer listed on portal",
+            )
+            await api.mark_expired(
+                booking_id,
+                "Job no longer available on portal — likely taken by another operator",
+            )
+            await api.post_log({
+                "portal_name": PORTAL_NAME,
+                "level": "info",
+                "step": "poll_back",
+                "external_booking_id": external_id,
+                "message": "Job expired: no longer listed on portal.",
+            })
+
+
 async def _try_auto_accept(
     adapter: FakeRidePortalAdapter,
     api: ApiClient,
@@ -223,6 +268,10 @@ async def _try_auto_accept(
         })
         logger.info("auto_accept_success", external_booking_id=external_id)
     except Exception as exc:
+        # Accept failed — job may have been taken by competitor or portal error
+        reason = f"Auto-accept failed: {type(exc).__name__}: {exc}"
+        if booking_id:
+            await api.mark_failed_to_accept(booking_id, reason)
         await _handle_generic_failure(adapter, api, external_id, "auto_accept", exc)
 
 
@@ -329,6 +378,7 @@ async def main() -> None:
             while True:
                 try:
                     await run_poll_cycle(adapter, api, seen_ids)
+                    await run_poll_back(adapter, api)
                 except Exception as exc:
                     logger.error(
                         "poll_cycle_error",

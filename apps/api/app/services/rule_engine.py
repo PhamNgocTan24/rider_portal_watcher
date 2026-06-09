@@ -16,13 +16,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.models.booking_job import BookingJob
+from app.models.booking_status import BookingStatus
 from app.models.business_rule import BusinessRule
 
 
 @dataclass
 class RuleDecision:
-    status: str          # accepted_candidate | rejected | failed
-    reason: str          # human-readable
+    status: BookingStatus
+    reason: str
     auto_accept_allowed: bool
 
 
@@ -43,7 +44,7 @@ def evaluate(
     # ------------------------------------------------------------------
     if not portal_is_healthy:
         return RuleDecision(
-            status="accepted_candidate",
+            status=BookingStatus.ACCEPTED_CANDIDATE,
             reason="Portal degraded; auto-accept paused",
             auto_accept_allowed=False,
         )
@@ -53,7 +54,7 @@ def evaluate(
     # ------------------------------------------------------------------
     if rule is None:
         return RuleDecision(
-            status="accepted_candidate",
+            status=BookingStatus.ACCEPTED_CANDIDATE,
             reason="No active rule configured; manual review required",
             auto_accept_allowed=False,
         )
@@ -67,7 +68,7 @@ def evaluate(
         min_val = float(rule.min_booking_value)
         if booking_value < min_val:
             return RuleDecision(
-                status="rejected",
+                status=BookingStatus.REJECTED,
                 reason=f"Booking value below minimum (£{booking_value:.2f} < £{min_val:.2f})",
                 auto_accept_allowed=False,
             )
@@ -80,7 +81,7 @@ def evaluate(
         allowed = [loc.strip().lower() for loc in rule.allowed_pickup_locations]
         if not any(pickup.startswith(a) or a in pickup for a in allowed):
             return RuleDecision(
-                status="rejected",
+                status=BookingStatus.REJECTED,
                 reason=f"Pickup location is not allowed: '{booking.pickup_location}'",
                 auto_accept_allowed=False,
             )
@@ -93,7 +94,7 @@ def evaluate(
         allowed = [v.strip().lower() for v in rule.allowed_vehicle_categories]
         if vehicle not in allowed:
             return RuleDecision(
-                status="rejected",
+                status=BookingStatus.REJECTED,
                 reason=f"Vehicle category is not allowed: '{booking.vehicle_category}'",
                 auto_accept_allowed=False,
             )
@@ -106,7 +107,7 @@ def evaluate(
         allowed = [c.strip().lower() for c in rule.allowed_customer_categories]
         if customer not in allowed:
             return RuleDecision(
-                status="rejected",
+                status=BookingStatus.REJECTED,
                 reason=f"Customer category is not allowed: '{booking.customer_category}'",
                 auto_accept_allowed=False,
             )
@@ -115,7 +116,7 @@ def evaluate(
     # 6. All checks passed — auto-accept depends on rule flag
     # ------------------------------------------------------------------
     return RuleDecision(
-        status="accepted_candidate",
+        status=BookingStatus.ACCEPTED_CANDIDATE,
         reason="Matched all active rules",
         auto_accept_allowed=rule.auto_accept,
     )

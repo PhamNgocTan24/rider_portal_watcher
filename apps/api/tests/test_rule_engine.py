@@ -5,11 +5,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
 
 from app.models.booking_job import BookingJob
 from app.models.business_rule import BusinessRule
-from app.services.rule_engine import RuleDecision, evaluate
+from app.services.rule_engine import evaluate
 
 
 # ---------------------------------------------------------------------------
