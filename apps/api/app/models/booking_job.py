@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from app.database import Base
+from app.models.booking_status import BookingStatus
 
 
 class BookingJob(Base):
@@ -29,7 +30,9 @@ class BookingJob(Base):
     pickup_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Decision fields
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="new", index=True)
+    status: Mapped[str] = mapped_column(
+        String(50), nullable=False, default=BookingStatus.NEW.value, index=True
+    )
     decision_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Raw extracted payload for debugging

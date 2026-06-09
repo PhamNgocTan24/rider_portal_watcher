@@ -96,6 +96,15 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
         logger.info("poll_no_new_jobs")
         return
 
+    # Log to API that new jobs were found
+    await api.post_log({
+        "portal_name": PORTAL_NAME,
+        "level": "info",
+        "step": "list_jobs",
+        "message": f"Found {len(new_ids)} new job(s) to process: {', '.join(new_ids)}",
+        "metadata": {"new_ids": new_ids, "total_visible": len(job_ids)},
+    })
+
     # 3. Process each new job
     for external_id in new_ids:
         seen_ids.add(external_id)
@@ -116,6 +125,25 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
             await _handle_generic_failure(adapter, api, external_id, "extract_job_detail", exc)
             continue
 
+        # Log successful extraction
+        await api.post_log({
+            "portal_name": PORTAL_NAME,
+            "level": "info",
+            "step": "extract_job_detail",
+            "external_booking_id": external_id,
+            "message": (
+                f"Extracted booking: {detail.get('pickup_location')} → {detail.get('dropoff_location')}, "
+                f"£{detail.get('booking_value')}, {detail.get('vehicle_category')}, {detail.get('customer_category')}"
+            ),
+            "metadata": {
+                "pickup": detail.get("pickup_location"),
+                "dropoff": detail.get("dropoff_location"),
+                "value": detail.get("booking_value"),
+                "vehicle": detail.get("vehicle_category"),
+                "customer": detail.get("customer_category"),
+            },
+        })
+
         # POST to API → get decision
         try:
             decision = await api.post_booking(detail)
@@ -130,16 +158,94 @@ async def run_poll_cycle(adapter: FakeRidePortalAdapter, api: ApiClient, seen_id
             })
             continue
 
+        status = decision.get("status")
+        reason = decision.get("decision_reason")
+        auto_accept = decision.get("auto_accept_allowed", False)
+
         logger.info(
             "booking_processed",
             external_booking_id=external_id,
-            status=decision.get("status"),
-            auto_accept_allowed=decision.get("auto_accept_allowed"),
+            status=status,
+            auto_accept_allowed=auto_accept,
         )
 
+        # For rejected bookings: capture screenshot of the portal as evidence
+        rejection_screenshot_path: str | None = None
+        if status == "rejected":
+            page = adapter._page
+            if page and not page.is_closed():
+                rejection_screenshot_path = await save_screenshot(
+                    page, "rejected", settings.worker_screenshot_dir
+                )
+                # Also update the BookingJob record so it's visible in the bookings dashboard
+                booking_id = decision.get("id")
+                if booking_id and rejection_screenshot_path:
+                    await api.set_booking_screenshot(booking_id, rejection_screenshot_path)
+
+        # Log rule evaluation result to API
+        await api.post_log({
+            "portal_name": PORTAL_NAME,
+            "level": "info",
+            "step": "rule_evaluation",
+            "external_booking_id": external_id,
+            "message": f"Decision: {status} — {reason}",
+            "screenshot_path": rejection_screenshot_path,
+            "metadata": {
+                "status": status,
+                "decision_reason": reason,
+                "auto_accept_allowed": auto_accept,
+                "already_exists": decision.get("already_exists", False),
+            },
+        })
+
         # Auto-accept if API says so
-        if decision.get("auto_accept_allowed") and decision.get("status") == "accepted_candidate":
+        if auto_accept and status == "accepted_candidate":
             await _try_auto_accept(adapter, api, external_id, decision.get("id"))
+
+
+async def run_poll_back(adapter: FakeRidePortalAdapter, api: ApiClient) -> None:
+    """
+    Poll-back: check all accepted_candidate bookings against the portal.
+    If a job is no longer listed on the portal, it was taken by someone else → mark expired.
+    Runs every poll cycle alongside run_poll_cycle.
+    """
+    candidates = await api.list_accepted_candidates()
+    if not candidates:
+        return
+
+    # Get current live job IDs from portal
+    try:
+        live_ids = set(await adapter.list_available_jobs())
+    except Exception as exc:
+        logger.warning("poll_back_list_failed", error=str(exc))
+        return
+
+    for booking in candidates:
+        external_id = booking.get("external_booking_id")
+        booking_id  = booking.get("id")
+        portal_name = booking.get("portal_name")
+
+        # Only check jobs from this worker's portal
+        if portal_name != PORTAL_NAME:
+            continue
+
+        if external_id not in live_ids:
+            logger.info(
+                "poll_back_job_gone",
+                external_booking_id=external_id,
+                reason="No longer listed on portal",
+            )
+            await api.mark_expired(
+                booking_id,
+                "Job no longer available on portal — likely taken by another operator",
+            )
+            await api.post_log({
+                "portal_name": PORTAL_NAME,
+                "level": "info",
+                "step": "poll_back",
+                "external_booking_id": external_id,
+                "message": "Job expired: no longer listed on portal.",
+            })
 
 
 async def _try_auto_accept(
@@ -162,6 +268,10 @@ async def _try_auto_accept(
         })
         logger.info("auto_accept_success", external_booking_id=external_id)
     except Exception as exc:
+        # Accept failed — job may have been taken by competitor or portal error
+        reason = f"Auto-accept failed: {type(exc).__name__}: {exc}"
+        if booking_id:
+            await api.mark_failed_to_accept(booking_id, reason)
         await _handle_generic_failure(adapter, api, external_id, "auto_accept", exc)
 
 
@@ -268,6 +378,7 @@ async def main() -> None:
             while True:
                 try:
                     await run_poll_cycle(adapter, api, seen_ids)
+                    await run_poll_back(adapter, api)
                 except Exception as exc:
                     logger.error(
                         "poll_cycle_error",

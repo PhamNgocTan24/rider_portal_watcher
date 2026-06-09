@@ -48,6 +48,82 @@ async def mark_auto_accepted(
     return BookingResponse.model_validate(booking)
 
 
+@router.post("/{booking_id}/manually-accepted", response_model=BookingResponse)
+async def mark_manually_accepted(
+    booking_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> BookingResponse:
+    """Operator confirms acceptance from the dashboard."""
+    service = BookingService(db)
+    try:
+        booking = await service.mark_manually_accepted(booking_id)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return BookingResponse.model_validate(booking)
+
+
+@router.post("/{booking_id}/failed-to-accept", response_model=BookingResponse)
+async def mark_failed_to_accept(
+    booking_id: str,
+    payload: dict = {},
+    db: AsyncSession = Depends(get_db),
+) -> BookingResponse:
+    """Worker calls this when auto-accept click fails (job taken by competitor, portal error)."""
+    service = BookingService(db)
+    reason = payload.get("reason", "Auto-accept failed on portal") if payload else "Auto-accept failed on portal"
+    try:
+        booking = await service.mark_failed_to_accept(booking_id, reason)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return BookingResponse.model_validate(booking)
+
+
+@router.post("/{booking_id}/expired", response_model=BookingResponse)
+async def mark_expired(
+    booking_id: str,
+    payload: dict = {},
+    db: AsyncSession = Depends(get_db),
+) -> BookingResponse:
+    """Worker calls this when poll-back detects the job is no longer available on the portal."""
+    service = BookingService(db)
+    reason = payload.get("reason", "Job no longer available on portal") if payload else "Job no longer available on portal"
+    try:
+        booking = await service.mark_expired(booking_id, reason)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return BookingResponse.model_validate(booking)
+
+
+@router.patch("/{booking_id}/screenshot", response_model=BookingResponse)
+async def set_screenshot(
+    booking_id: str,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+) -> BookingResponse:
+    """Worker calls this to attach a screenshot URL to a booking record."""
+    import uuid
+    try:
+        bid = uuid.UUID(booking_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid booking ID format")
+
+    repo = BookingRepository(db)
+    booking = await repo.get_by_id(bid)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    booking.screenshot_path = payload.get("screenshot_path")
+    await db.commit()
+    await db.refresh(booking)
+    return BookingResponse.model_validate(booking)
+
+
 @router.get("", response_model=list[BookingResponse])
 async def list_bookings(
     status: str | None = None,
@@ -55,7 +131,8 @@ async def list_bookings(
 ) -> Sequence[BookingResponse]:
     """
     List bookings, optionally filtered by status.
-    Status values: new | accepted_candidate | auto_accepted | rejected | failed
+    Valid status values: new | accepted_candidate | auto_accepted |
+                         manually_accepted | failed_to_accept | rejected | expired
     """
     repo = BookingRepository(db)
     bookings = await repo.list_by_status(status)

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking_job import BookingJob
+from app.models.booking_status import BookingStatus, is_valid_status_transition
 
 
 class BookingRepository:
@@ -34,6 +35,14 @@ class BookingRepository:
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
+    async def list_by_statuses(self, statuses: list[str]) -> Sequence[BookingJob]:
+        """Filter by multiple statuses at once."""
+        stmt = select(BookingJob).where(
+            BookingJob.status.in_(statuses)
+        ).order_by(BookingJob.detected_at.desc())
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
     async def create(self, booking: BookingJob) -> BookingJob:
         self._session.add(booking)
         await self._session.flush()
@@ -43,10 +52,21 @@ class BookingRepository:
     async def update_status(
         self,
         booking: BookingJob,
-        status: str,
+        status: BookingStatus | str,
         decision_reason: str | None = None,
     ) -> BookingJob:
-        booking.status = status
+        """
+        Update booking status. Validates the transition is allowed.
+        Raises ValueError on invalid transition.
+        """
+        new_status = BookingStatus(status) if isinstance(status, str) else status
+
+        if not is_valid_status_transition(booking.status, new_status):
+            raise ValueError(
+                f"Invalid status transition: {booking.status!r} → {new_status.value!r}"
+            )
+
+        booking.status = new_status.value
         if decision_reason is not None:
             booking.decision_reason = decision_reason
         await self._session.flush()

@@ -10,7 +10,6 @@ from __future__ import annotations
 import time
 
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
 
 pytestmark = pytest.mark.asyncio

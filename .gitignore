@@ -32,3 +32,4 @@ artifacts/html_snapshots/*
 .idea/
 .vscode/
 *.swp
+.mcp.json

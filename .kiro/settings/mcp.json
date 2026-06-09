@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "playwriter": {
+      "command": "playwriter",
+      "args": [],
+      "disabled": false,
+      "autoApprove": [
+        "execute",
+        "reset"
+      ]
+    }
+  }
+}

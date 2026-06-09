@@ -37,6 +37,9 @@ services:
       - "8000:8000"
     volumes:
       - artifacts:/app/artifacts
+      # Hot-reload templates & static without rebuild
+      - ./apps/api/app/templates:/app/app/templates:ro
+      - ./apps/api/app/static:/app/app/static:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 10s
