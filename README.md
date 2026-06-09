@@ -22,6 +22,8 @@ A portfolio-grade MVP demonstrating **production-minded browser automation** for
 ```bash
 git clone git@github.com:PhamNgocTan24/rider_portal_watcher.git
 cd rider_portal_watcher
+
+colima start
 docker compose up --build
 ```
 

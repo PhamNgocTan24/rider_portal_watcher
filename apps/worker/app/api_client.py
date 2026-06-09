@@ -77,7 +77,39 @@ class ApiClient:
         except Exception as exc:
             logger.warning("api_set_booking_screenshot_failed", error=str(exc))
 
-    async def booking_exists(self, portal_name: str, external_booking_id: str) -> bool:
+    async def mark_failed_to_accept(self, booking_id: str, reason: str) -> None:
+        """Worker calls this when auto-accept click fails."""
+        try:
+            resp = await self.client.post(
+                f"/api/bookings/{booking_id}/failed-to-accept",
+                json={"reason": reason},
+            )
+            resp.raise_for_status()
+        except Exception as exc:
+            logger.warning("api_mark_failed_to_accept_failed", error=str(exc))
+
+    async def mark_expired(self, booking_id: str, reason: str) -> None:
+        """Worker calls this when poll-back detects a candidate job is gone."""
+        try:
+            resp = await self.client.post(
+                f"/api/bookings/{booking_id}/expired",
+                json={"reason": reason},
+            )
+            resp.raise_for_status()
+        except Exception as exc:
+            logger.warning("api_mark_expired_failed", error=str(exc))
+
+    async def list_accepted_candidates(self) -> list[dict]:
+        """Return all bookings with status=accepted_candidate for poll-back."""
+        try:
+            resp = await self.client.get(
+                "/api/bookings", params={"status": "accepted_candidate"}
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as exc:
+            logger.warning("api_list_accepted_candidates_failed", error=str(exc))
+            return []
         try:
             resp = await self.client.get(
                 "/api/bookings/exists",

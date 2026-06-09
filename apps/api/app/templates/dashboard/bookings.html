@@ -123,6 +123,7 @@
           {# col 9 #}<th>Reason</th>
           {# col 10 #}<th data-sort-col="10">Detected</th>
           {# col 11 #}<th>Screenshot</th>
+          {# col 12 #}<th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -153,6 +154,23 @@
               <span style="color:var(--text-muted); font-size:12px;">—</span>
             {% endif %}
           </td>
+          {% if b.status == 'accepted_candidate' %}
+          <td>
+            <form method="post" action="/api/bookings/{{ b.id }}/manually-accepted" style="display:inline">
+              <button type="submit"
+                style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--color-success-bg);color:var(--color-success);border:1px solid var(--color-success);border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;transition:background 150ms;"
+                title="Mark as manually accepted"
+                onclick="return confirm('Confirm acceptance of booking {{ b.external_booking_id }}?')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20,6 9,17 4,12"/>
+                </svg>
+                Confirm
+              </button>
+            </form>
+          </td>
+          {% else %}
+          <td><span style="color:var(--text-muted);font-size:12px;">—</span></td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
