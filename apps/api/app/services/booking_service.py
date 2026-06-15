@@ -124,6 +124,12 @@ class BookingService:
         )
         await self._session.commit()
         logger.info("booking_auto_accepted", id=str(booking.id))
+
+        await telegram.notify_booking_decision(
+            external_booking_id=booking.external_booking_id,
+            status=BookingStatus.AUTO_ACCEPTED.value,
+            reason="Worker confirmed accept click on portal",
+        )
         return booking
 
     async def mark_manually_accepted(self, booking_id: str) -> BookingJob | None:
@@ -145,6 +151,12 @@ class BookingService:
         )
         await self._session.commit()
         logger.info("booking_manually_accepted", id=str(booking.id))
+
+        await telegram.notify_booking_decision(
+            external_booking_id=booking.external_booking_id,
+            status=BookingStatus.MANUALLY_ACCEPTED.value,
+            reason="Operator confirmed acceptance via dashboard",
+        )
         return booking
 
     async def mark_failed_to_accept(

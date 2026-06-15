@@ -13,6 +13,16 @@ logger = structlog.get_logger()
 router = APIRouter(prefix="/api/portal-status", tags=["portal-status"])
 
 
+@router.get("", response_model=list[PortalStatusResponse])
+async def list_portal_statuses(
+    db: AsyncSession = Depends(get_db),
+) -> list[PortalStatusResponse]:
+    """List health status for all known portals."""
+    repo = PortalStatusRepository(db)
+    portals = await repo.list_all()
+    return [PortalStatusResponse.model_validate(p) for p in portals]
+
+
 @router.post("", response_model=PortalStatusResponse)
 async def upsert_portal_status(
     req: PortalStatusUpsertRequest,

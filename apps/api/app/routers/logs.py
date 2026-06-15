@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.automation_log import AutomationLog
 from app.repositories.log_repository import LogRepository
 from app.schemas.log import LogCreateRequest, LogResponse
+from app.services import telegram
 
 logger = structlog.get_logger()
 router = APIRouter(prefix="/api/logs", tags=["logs"])
@@ -32,8 +33,15 @@ async def create_log(
     log = await repo.create(log)
     await db.commit()
 
+    # Send Telegram alert for critical automation errors
     if req.level in ("error", "critical"):
         logger.warning("automation_log_error", step=req.step, portal=req.portal_name, msg=req.message[:100])
+        await telegram.notify_automation_error(
+            portal_name=req.portal_name,
+            step=req.step,
+            message=req.message,
+            external_booking_id=req.external_booking_id,
+        )
 
     return LogResponse.model_validate(log)
 
