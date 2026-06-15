@@ -33,3 +33,6 @@ artifacts/html_snapshots/*
 .vscode/
 *.swp
 .mcp.json
+.codex/
+
+# Codex local config
