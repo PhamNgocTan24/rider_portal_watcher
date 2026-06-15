@@ -249,3 +249,79 @@ Check:
 Acceptance:
 
 - Project is ready for GitHub and Upwork proposal.
+
+## Task 16 — BookingStatus Enum and State Machine
+
+Implemented (in commit 9dc5152, branch `task-booking-status-enum`):
+
+- New file `apps/api/app/models/booking_status.py` with the `BookingStatus`
+  enum and `is_valid_status_transition(from, to)`.
+- `BookingRepository.update_status()` validates transitions, raises
+  `ValueError` on invalid moves.
+- `BookingService` gains `mark_manually_accepted`, `mark_failed_to_accept`,
+  `mark_expired`.
+- Three new API endpoints (see ARCHITECTURE §5).
+- `ACCEPTED_STATUSES` and `TERMINAL_STATUSES` exported for dashboard.
+
+Acceptance:
+
+- All 33 API tests still pass.
+- Invalid transitions return 409 from the API.
+
+## Task 17 — Poll-Back Loop (Autonomous Expiry)
+
+Implemented (same commit):
+
+- `apps/worker/app/main.py:run_poll_back()` — every poll cycle, lists
+  `accepted_candidate` bookings and marks any whose external_id is no
+  longer on the portal as `expired`.
+- `ApiClient.list_accepted_candidates()` — fetches the candidate list.
+- `ApiClient.mark_expired(booking_id, reason)` — transitions a booking.
+
+Acceptance:
+
+- A booking that disappears from the portal becomes `expired` within
+  one poll cycle.
+- A booking still on the portal is left alone.
+
+## Task 18 — Manual Confirm from Dashboard
+
+Implemented (same commit):
+
+- Dashboard `bookings.html` shows a Confirm button only for
+  `accepted_candidate` rows.
+- Clicking Confirm POSTs to `/manually-accepted` with a JS confirm dialog.
+- The button is hidden for every other status.
+
+Acceptance:
+
+- Operator can move a row from `accepted_candidate` to
+  `manually_accepted` via the dashboard.
+- An already-terminal row does not show the button.
+
+## Task 19 — Documentation Alignment and Test Coverage
+
+Resolve the gap between code and docs after Tasks 16-18 landed without
+docs updates.
+
+Acceptance:
+
+- REQUIREMENTS.md lists all 7 statuses and the state machine graph.
+- ARCHITECTURE.md documents Manual Confirm, Poll-Back, and Failed
+  Auto-Accept flows; the state machine table; the new endpoints.
+- TASKS.md reflects Tasks 16-19 (this section).
+- TESTING.md gains test cases for transitions, manual confirm, poll-back.
+
+## Task 20 — Fix Worker ApiClient.booking_exists() Bug
+
+Found via audit: `main.py:113` calls `api.booking_exists(...)` but the
+method was never defined in `ApiClient` — only orphan code at the end
+of the file referencing unbound variables. Worker would AttributeError
+on the first poll cycle.
+
+Fix: add `booking_exists(portal_name, external_booking_id) -> bool` to
+`ApiClient`, removing the orphan fragment.
+
+Tests: 12 new tests in `apps/worker/tests/test_api_client.py` covering
+`booking_exists`, `list_accepted_candidates`, `mark_failed_to_accept`,
+`mark_expired`. All 24 worker tests now pass (12 prior + 12 new).

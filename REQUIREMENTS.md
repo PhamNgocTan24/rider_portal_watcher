@@ -103,13 +103,30 @@ MVP rules:
 - Allowed customer categories.
 - Auto-accept enabled/disabled.
 
-Decision statuses:
+Decision statuses (full state machine — see `apps/api/app/models/booking_status.py`):
 
-- `new`
-- `accepted_candidate`
-- `auto_accepted`
-- `rejected`
-- `failed`
+- `new` — entry point, set on creation before rule evaluation
+- `accepted_candidate` — rules passed, awaiting action (auto-accept or operator confirm)
+- `auto_accepted` — terminal: worker clicked accept on portal successfully
+- `manually_accepted` — terminal: operator confirmed via dashboard
+- `failed_to_accept` — terminal: worker tried to auto-accept but job was gone / portal error
+- `rejected` — terminal: rule-engine rejected the booking
+- `expired` — terminal: poll-back detected the job is no longer available on the portal
+
+State transition graph:
+
+```text
+new ──────────────────┬──► accepted_candidate ──┬──► auto_accepted
+                      │                          ├──► manually_accepted
+                      │                          ├──► failed_to_accept
+                      │                          └──► expired
+                      └──► rejected
+```
+
+Five terminal states have no outgoing transitions. Transitions are enforced by
+`is_valid_status_transition(from, to)` in `booking_status.py` and the
+repository raises `ValueError` on invalid moves (returned as HTTP 409 by
+the API).
 
 Decision reasons must be human-readable.
 
@@ -121,6 +138,9 @@ Example reasons:
 - `Vehicle category is not allowed`
 - `Customer category is not allowed`
 - `Portal degraded; auto-accept paused`
+- `Operator confirmed acceptance via dashboard` (manually_accepted)
+- `Auto-accept failed: <exception>` (failed_to_accept)
+- `Job no longer available on portal — likely taken by another operator` (expired)
 
 ### 4.5 Telegram Notifications
 
@@ -195,6 +215,28 @@ The system should expose:
 - Fake portal: `http://localhost:3000`
 - API and dashboard: `http://localhost:8000`
 - API docs: `http://localhost:8000/docs`
+
+### 4.9 Operator Actions and Lifecycle
+
+The MVP supports three ways a booking reaches a terminal state:
+
+**Auto-accept (worker-driven):** When the rule engine returns
+`accepted_candidate` with `auto_accept_allowed=true`, the worker clicks
+accept on the portal and POSTs to `/api/bookings/{id}/auto-accepted`. If
+the click fails (job taken, portal error), the worker POSTs to
+`/api/bookings/{id}/failed-to-accept` with the reason.
+
+**Manual confirm (operator-driven):** The dashboard shows a Confirm
+button for any booking in `accepted_candidate` status. Clicking it
+POSTs to `/api/bookings/{id}/manually-accepted`, which transitions the
+booking to `manually_accepted` and is also marked terminal.
+
+**Poll-back (worker-driven, autonomous):** Every poll cycle, the worker
+calls `GET /api/bookings?status=accepted_candidate` and checks each
+against the portal's current job list. If a job is no longer listed
+(taken by another operator, or timed out), the worker POSTs to
+`/api/bookings/{id}/expired`. This prevents stale `accepted_candidate`
+bookings from sitting in the dashboard forever.
 
 ## 5. Out of Scope
 
