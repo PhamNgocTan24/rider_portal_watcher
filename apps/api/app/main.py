@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app.database import AsyncSessionLocal
-from app.routers import bookings, dashboard, logs, portal_status
+from app.routers import bookings, dashboard, logs, portal_status, rules
 
 logger = structlog.get_logger()
 
@@ -48,6 +48,7 @@ app.mount("/artifacts", StaticFiles(directory="/app/artifacts"), name="artifacts
 app.include_router(bookings.router)
 app.include_router(logs.router)
 app.include_router(portal_status.router)
+app.include_router(rules.router)
 app.include_router(dashboard.router)
 
 
