@@ -110,6 +110,17 @@ class ApiClient:
         except Exception as exc:
             logger.warning("api_list_accepted_candidates_failed", error=str(exc))
             return []
+
+    async def booking_exists(self, portal_name: str, external_booking_id: str) -> bool:
+        """
+        Check if a booking already exists in API DB.
+
+        Worker calls this before extracting detail to skip already-processed
+        jobs (in case the worker's local seen_ids cache was cleared).
+
+        Returns False on any error — worker must not crash on transient
+        API failures, the poll cycle should continue.
+        """
         try:
             resp = await self.client.get(
                 "/api/bookings/exists",
