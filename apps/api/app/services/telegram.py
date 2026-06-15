@@ -74,7 +74,14 @@ async def notify_booking_decision(
     status: str,
     reason: str | None,
 ) -> None:
-    emoji = {"accepted_candidate": "✅", "auto_accepted": "🤖", "rejected": "❌"}.get(status, "ℹ️")
+    emoji = {
+        "accepted_candidate": "✅",
+        "auto_accepted": "🤖",
+        "manually_accepted": "👤",
+        "rejected": "❌",
+        "failed_to_accept": "⚠️",
+        "expired": "⏰",
+    }.get(status, "ℹ️")
     msg = (
         f"{emoji} <b>Booking decision: {status}</b>\n"
         f"ID: <code>{external_booking_id}</code>\n"
