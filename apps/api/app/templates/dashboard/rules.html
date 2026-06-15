@@ -25,95 +25,170 @@
   {% endif %}
 </div>
 
-{% if rules %}
-  {% for rule in rules %}
-  <div class="rule-card">
-    <div class="rule-card-header">
-      <h3>{{ rule.name }}</h3>
-      <div class="rule-card-badges">
-        {% if rule.auto_accept %}
-          <span class="badge badge-info">Auto-accept ON</span>
-        {% else %}
-          <span class="badge" style="background:var(--color-neutral-bg);color:var(--text-muted);">Auto-accept OFF</span>
-        {% endif %}
-        {% if rule.is_active %}
-          <span class="badge badge-healthy">
-            <span class="badge-dot"></span>
+<!-- Existing rules -->
+{% for rule in rules %}
+<div class="rule-card">
+  <div class="rule-card-header">
+    <h3>{{ rule.name }}</h3>
+    <div class="rule-card-badges">
+      {% if rule.auto_accept %}
+        <span class="badge badge-info">Auto-accept ON</span>
+      {% else %}
+        <span class="badge" style="background:var(--color-neutral-bg);color:var(--text-muted);">Auto-accept OFF</span>
+      {% endif %}
+      {% if rule.is_active %}
+        <span class="badge badge-healthy"><span class="badge-dot"></span>Active</span>
+      {% else %}
+        <span class="badge badge-new">Inactive</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Read-only summary -->
+  <div class="rule-grid">
+    <div class="rule-field">
+      <div class="label">Min Booking Value</div>
+      <div class="value">
+        {% if rule.min_booking_value %}
+          <span class="mono">£{{ "%.2f"|format(rule.min_booking_value|float) }}</span>
+        {% else %}<span style="color:var(--text-muted);">Any</span>{% endif %}
+      </div>
+    </div>
+    <div class="rule-field">
+      <div class="label">Allowed Pickups</div>
+      <div class="value">
+        {% if rule.allowed_pickup_locations %}{{ rule.allowed_pickup_locations | join(", ") }}
+        {% else %}<span style="color:var(--text-muted);">Any</span>{% endif %}
+      </div>
+    </div>
+    <div class="rule-field">
+      <div class="label">Allowed Vehicles</div>
+      <div class="value">
+        {% if rule.allowed_vehicle_categories %}{{ rule.allowed_vehicle_categories | join(", ") }}
+        {% else %}<span style="color:var(--text-muted);">Any</span>{% endif %}
+      </div>
+    </div>
+    <div class="rule-field">
+      <div class="label">Allowed Customers</div>
+      <div class="value">
+        {% if rule.allowed_customer_categories %}{{ rule.allowed_customer_categories | join(", ") }}
+        {% else %}<span style="color:var(--text-muted);">Any</span>{% endif %}
+      </div>
+    </div>
+    <div class="rule-field" style="grid-column: span 2;">
+      <div class="label">Rule ID</div>
+      <div class="value mono">{{ rule.id }}</div>
+    </div>
+  </div>
+
+  <!-- Edit form (collapsible) -->
+  <details style="margin-top:12px;">
+    <summary style="cursor:pointer; font-size:12px; font-weight:600; color:var(--color-secondary); user-select:none;">
+      Edit this rule
+    </summary>
+    <form method="post" action="/rules/{{ rule.id }}" style="margin-top:12px;">
+      <div class="rule-form-grid">
+        <div class="form-field">
+          <label>Name</label>
+          <input type="text" name="name" value="{{ rule.name }}" required />
+        </div>
+        <div class="form-field">
+          <label>Min Booking Value (£)</label>
+          <input type="number" name="min_booking_value" step="0.01" min="0"
+                 value="{{ rule.min_booking_value if rule.min_booking_value else '' }}" />
+        </div>
+        <div class="form-field">
+          <label>Allowed Pickups <span style="color:var(--text-muted); font-weight:400;">(comma-separated)</span></label>
+          <input type="text" name="allowed_pickup_locations"
+                 value="{{ rule.allowed_pickup_locations | join(', ') if rule.allowed_pickup_locations else '' }}" />
+        </div>
+        <div class="form-field">
+          <label>Allowed Vehicles <span style="color:var(--text-muted); font-weight:400;">(comma-separated)</span></label>
+          <input type="text" name="allowed_vehicle_categories"
+                 value="{{ rule.allowed_vehicle_categories | join(', ') if rule.allowed_vehicle_categories else '' }}" />
+        </div>
+        <div class="form-field">
+          <label>Allowed Customers <span style="color:var(--text-muted); font-weight:400;">(comma-separated)</span></label>
+          <input type="text" name="allowed_customer_categories"
+                 value="{{ rule.allowed_customer_categories | join(', ') if rule.allowed_customer_categories else '' }}" />
+        </div>
+        <div class="form-field" style="display:flex; gap:24px; align-items:center;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" name="auto_accept" value="on" {% if rule.auto_accept %}checked{% endif %} />
+            Auto-accept enabled
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" name="is_active" value="on" {% if rule.is_active %}checked{% endif %} />
             Active
-          </span>
-        {% else %}
-          <span class="badge badge-new">Inactive</span>
-        {% endif %}
+          </label>
+        </div>
       </div>
+      <div style="margin-top:12px;">
+        <button type="submit" class="btn-primary-sm">Save changes</button>
+      </div>
+    </form>
+  </details>
+</div>
+{% endfor %}
+
+{% if not rules %}
+<div class="card">
+  <div class="empty">
+    <div class="empty-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+        <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+        <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
+      </svg>
     </div>
-
-    <div class="rule-grid">
-      <div class="rule-field">
-        <div class="label">Min Booking Value</div>
-        <div class="value">
-          {% if rule.min_booking_value %}
-            <span style="font-family:'Fira Code',monospace;">£{{ "%.2f"|format(rule.min_booking_value|float) }}</span>
-          {% else %}
-            <span style="color:var(--text-muted);">Any</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="rule-field">
-        <div class="label">Allowed Pickups</div>
-        <div class="value">
-          {% if rule.allowed_pickup_locations %}
-            {{ rule.allowed_pickup_locations | join(", ") }}
-          {% else %}
-            <span style="color:var(--text-muted);">Any</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="rule-field">
-        <div class="label">Allowed Vehicles</div>
-        <div class="value">
-          {% if rule.allowed_vehicle_categories %}
-            {{ rule.allowed_vehicle_categories | join(", ") }}
-          {% else %}
-            <span style="color:var(--text-muted);">Any</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="rule-field">
-        <div class="label">Allowed Customers</div>
-        <div class="value">
-          {% if rule.allowed_customer_categories %}
-            {{ rule.allowed_customer_categories | join(", ") }}
-          {% else %}
-            <span style="color:var(--text-muted);">Any</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="rule-field" style="grid-column: span 2;">
-        <div class="label">Rule ID</div>
-        <div class="value mono">{{ rule.id }}</div>
-      </div>
-    </div>
+    <p>No rules configured. Add a business rule below to enable auto-accept automation.</p>
   </div>
-  {% endfor %}
-
-{% else %}
-  <div class="card">
-    <div class="empty">
-      <div class="empty-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
-          <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
-          <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
-          <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>
-        </svg>
-      </div>
-      <p>No rules configured. Add a business rule to enable auto-accept automation.</p>
-    </div>
-  </div>
+</div>
 {% endif %}
+
+<!-- Add new rule form -->
+<div class="card" style="margin-top:24px;">
+  <div class="card-header">
+    <h2>Add New Rule</h2>
+  </div>
+  <form method="post" action="/rules" style="padding: 0 4px 4px;">
+    <div class="rule-form-grid">
+      <div class="form-field">
+        <label>Name <span style="color:var(--color-error);">*</span></label>
+        <input type="text" name="name" placeholder="e.g. Default Rule" required />
+      </div>
+      <div class="form-field">
+        <label>Min Booking Value (£)</label>
+        <input type="number" name="min_booking_value" step="0.01" min="0" placeholder="e.g. 50" />
+      </div>
+      <div class="form-field">
+        <label>Allowed Pickups <span style="color:var(--text-muted); font-weight:400;">(comma-separated, blank = any)</span></label>
+        <input type="text" name="allowed_pickup_locations" placeholder="e.g. Heathrow, Gatwick" />
+      </div>
+      <div class="form-field">
+        <label>Allowed Vehicles <span style="color:var(--text-muted); font-weight:400;">(comma-separated, blank = any)</span></label>
+        <input type="text" name="allowed_vehicle_categories" placeholder="e.g. Executive Saloon, MPV" />
+      </div>
+      <div class="form-field">
+        <label>Allowed Customers <span style="color:var(--text-muted); font-weight:400;">(comma-separated, blank = any)</span></label>
+        <input type="text" name="allowed_customer_categories" placeholder="e.g. corporate, leisure" />
+      </div>
+      <div class="form-field" style="display:flex; gap:24px; align-items:center;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" name="auto_accept" value="on" />
+          Auto-accept enabled
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" name="is_active" value="on" checked />
+          Active
+        </label>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <button type="submit" class="btn-primary-sm">Create Rule</button>
+    </div>
+  </form>
+</div>
 
 {% endblock %}
