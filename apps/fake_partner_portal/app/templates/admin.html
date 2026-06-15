@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Admin — Fake Portal{% endblock %}
+{% block content %}
+
+<div style="max-width: 640px; margin: 32px auto; padding: 0 16px;">
+
+  <h1 style="font-size: 22px; font-weight: 700; margin-bottom: 4px;">Admin Panel</h1>
+  <p style="font-size: 13px; color: #64748B; margin-bottom: 32px;">
+    Demo tools: publish rides and switch portal layout for automation testing.
+  </p>
+
+  <!-- Current layout indicator -->
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:28px; padding:12px 16px;
+              border:1px solid #E2E8F0; border-radius:8px; background:#F8FAFC;">
+    <span style="font-size:12px; font-weight:600; color:#64748B; text-transform:uppercase; letter-spacing:0.05em;">Current Layout:</span>
+    <span style="font-family:monospace; font-size:13px; font-weight:700;
+          color: {% if layout == 'layout_a' %}#059669{% elif layout == 'layout_b' %}#0369A1{% else %}#DC2626{% endif %};">
+      {{ layout }}
+    </span>
+    {% if layout == 'broken' %}
+    <span style="font-size:11px; color:#DC2626; font-weight:600;">⚠ Worker automation paused</span>
+    {% endif %}
+  </div>
+
+  <!-- === Publish Job === -->
+  <div style="background:#fff; border:1px solid #E2E8F0; border-radius:10px; padding:20px; margin-bottom:24px;">
+    <h2 style="font-size:15px; font-weight:700; margin-bottom:16px;">Publish a Ride</h2>
+    <form method="post" action="/admin/publish-job">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; text-transform:uppercase;">Pickup</label>
+          <input type="text" name="pickup" value="Heathrow Airport T5"
+                 style="padding:7px 10px; border:1px solid #E2E8F0; border-radius:6px; font-size:13px;" />
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; text-transform:uppercase;">Dropoff</label>
+          <input type="text" name="dropoff" value="Mayfair, London"
+                 style="padding:7px 10px; border:1px solid #E2E8F0; border-radius:6px; font-size:13px;" />
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; text-transform:uppercase;">Value (£)</label>
+          <input type="number" name="value" value="120" step="0.01" min="0"
+                 style="padding:7px 10px; border:1px solid #E2E8F0; border-radius:6px; font-size:13px;" />
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; text-transform:uppercase;">Vehicle</label>
+          <select name="vehicle" style="padding:7px 10px; border:1px solid #E2E8F0; border-radius:6px; font-size:13px;">
+            <option value="Executive Saloon">Executive Saloon</option>
+            <option value="MPV">MPV</option>
+            <option value="Estate">Estate</option>
+            <option value="Luxury">Luxury</option>
+            <option value="Minibus">Minibus</option>
+          </select>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; text-transform:uppercase;">Customer Category</label>
+          <select name="customer_category" style="padding:7px 10px; border:1px solid #E2E8F0; border-radius:6px; font-size:13px;">
+            <option value="corporate">Corporate</option>
+            <option value="leisure">Leisure</option>
+            <option value="vip">VIP</option>
+          </select>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; text-transform:uppercase;">Pickup Time</label>
+          <input type="text" name="pickup_time" value="2026-06-15T10:00:00Z"
+                 style="padding:7px 10px; border:1px solid #E2E8F0; border-radius:6px; font-size:13px; font-family:monospace;" />
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:4px; grid-column:span 2;">
+          <label style="font-size:11px; font-weight:600; color:#64748B; text-transform:uppercase;">Notes</label>
+          <input type="text" name="notes" placeholder="Optional driver notes"
+                 style="padding:7px 10px; border:1px solid #E2E8F0; border-radius:6px; font-size:13px;" />
+        </div>
+      </div>
+
+      <button type="submit"
+              style="margin-top:16px; padding:8px 20px; background:#1E40AF; color:#fff; border:none;
+                     border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;">
+        Publish Ride
+      </button>
+    </form>
+  </div>
+
+  <!-- === Switch Layout === -->
+  <div style="background:#fff; border:1px solid #E2E8F0; border-radius:10px; padding:20px; margin-bottom:24px;">
+    <h2 style="font-size:15px; font-weight:700; margin-bottom:6px;">Switch Portal Layout</h2>
+    <p style="font-size:12px; color:#64748B; margin-bottom:16px;">
+      Layout A uses <code>data-testid</code> selectors. Layout B uses different CSS classes (tests fallback selectors).
+      Broken layout has no valid selectors — worker should detect failure and mark portal degraded.
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+
+      <form method="post" action="/admin/switch-layout">
+        <input type="hidden" name="layout" value="layout_a" />
+        <button type="submit"
+                style="padding:8px 18px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;
+                       {% if layout == 'layout_a' %}background:#059669;color:#fff;border:1px solid #059669;
+                       {% else %}background:#F1F5F9;color:#334155;border:1px solid #E2E8F0;{% endif %}">
+          Layout A (default)
+        </button>
+      </form>
+
+      <form method="post" action="/admin/switch-layout">
+        <input type="hidden" name="layout" value="layout_b" />
+        <button type="submit"
+                style="padding:8px 18px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;
+                       {% if layout == 'layout_b' %}background:#0369A1;color:#fff;border:1px solid #0369A1;
+                       {% else %}background:#F1F5F9;color:#334155;border:1px solid #E2E8F0;{% endif %}">
+          Layout B (fallback)
+        </button>
+      </form>
+
+      <form method="post" action="/admin/switch-layout">
+        <input type="hidden" name="layout" value="broken" />
+        <button type="submit"
+                style="padding:8px 18px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer;
+                       {% if layout == 'broken' %}background:#DC2626;color:#fff;border:1px solid #DC2626;
+                       {% else %}background:#FEF2F2;color:#DC2626;border:1px solid #FEE2E2;{% endif %}">
+          ⚠ Broken layout
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Back link -->
+  <a href="/rides" style="font-size:13px; color:#3B82F6; font-weight:500;">← Back to rides</a>
+
+</div>
+
+{% endblock %}

@@ -147,10 +147,22 @@ async def accept_ride(request: Request, external_booking_id: str) -> Response:
 
 
 # ---------------------------------------------------------------------------
+# Admin: admin panel page
+# ---------------------------------------------------------------------------
+@app.get("/admin", response_class=HTMLResponse, tags=["admin"])
+async def admin_page(request: Request) -> HTMLResponse:
+    require_login(request)
+    return templates.TemplateResponse(
+        "admin.html", {"request": request, "layout": state.current_layout}
+    )
+
+
+# ---------------------------------------------------------------------------
 # Admin: publish job
 # ---------------------------------------------------------------------------
 @app.post("/admin/publish-job", tags=["admin"])
 async def publish_job(
+    request: Request,
     pickup: str = Form(default="Heathrow Airport T5"),
     dropoff: str = Form(default="Mayfair, London"),
     value: float = Form(default=120.0),
@@ -158,7 +170,7 @@ async def publish_job(
     customer_category: str = Form(default="corporate"),
     pickup_time: str = Form(default="2026-06-07T09:00:00Z"),
     notes: str = Form(default=""),
-) -> JSONResponse:
+) -> Response:
     ride = {
         "external_booking_id": str(uuid.uuid4())[:8].upper(),
         "pickup_location": pickup,
@@ -173,6 +185,10 @@ async def publish_job(
     }
     rides[ride["external_booking_id"]] = ride
     logger.info("job_published", external_booking_id=ride["external_booking_id"])
+    # If called from browser form, redirect back to admin; otherwise JSON
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return RedirectResponse(url="/admin", status_code=303)
     return JSONResponse({"ok": True, "external_booking_id": ride["external_booking_id"]})
 
 
@@ -180,7 +196,10 @@ async def publish_job(
 # Admin: switch layout
 # ---------------------------------------------------------------------------
 @app.post("/admin/switch-layout", tags=["admin"])
-async def switch_layout(layout: LayoutMode = Form(...)) -> JSONResponse:
+async def switch_layout(request: Request, layout: LayoutMode = Form(...)) -> Response:
     state.current_layout = layout
     logger.info("layout_switched", layout=layout)
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return RedirectResponse(url="/admin", status_code=303)
     return JSONResponse({"ok": True, "layout": layout})
