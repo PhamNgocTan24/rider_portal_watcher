@@ -6,20 +6,22 @@ Tests should prove the core business logic and automation safety behavior. The M
 
 ## 2. Test Commands
 
-From repo root:
+All tests run inside Docker — no local Python env required.
 
 ```bash
-pytest
+# API tests (requires postgres — runs alembic + pytest):
+docker compose -f docker-compose.test.yml --profile api up --build \
+  --abort-on-container-exit --exit-code-from test-api
+
+# Worker tests (mocks only — no DB, no browser):
+docker compose -f docker-compose.test.yml --profile worker up --build \
+  --abort-on-container-exit --exit-code-from test-worker
+
+# Clean up test containers and volumes:
+docker compose -f docker-compose.test.yml down -v
 ```
 
-For service-specific tests, use:
-
-```bash
-cd apps/api && pytest
-cd apps/worker && pytest
-```
-
-Docker validation:
+Full system smoke test:
 
 ```bash
 docker compose up --build
@@ -202,7 +204,7 @@ The project is considered passing when:
 - API tests pass.
 - Docker demo starts.
 - Manual demo checklist works.
-- Current test count baseline: **45 passing** (33 API + 12 worker).
-  After the test-coverage work in Task 19-22 the count grows to
-  **57+ passing** (33 API + 24 worker, plus state-machine, manual-
-  confirm, poll-back tests).
+- Current test count baseline: **128 passing** (96 API + 32 worker).
+  - 96 API tests: booking CRUD, deduplication, state machine, status endpoints,
+    dashboard filtering, rule engine, logs/portal-status API, rules CRUD.
+  - 32 worker tests: api_client methods, poll-back loop, portal safety, selector fallback.

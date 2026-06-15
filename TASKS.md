@@ -325,3 +325,41 @@ Fix: add `booking_exists(portal_name, external_booking_id) -> bool` to
 Tests: 12 new tests in `apps/worker/tests/test_api_client.py` covering
 `booking_exists`, `list_accepted_candidates`, `mark_failed_to_accept`,
 `mark_expired`. All 24 worker tests now pass (12 prior + 12 new).
+
+## Task 24 — Rules CRUD API, Docker Test Pipeline, Failed/Expired Dashboard
+
+Implemented:
+
+- `GET /api/rules` — list all rules.
+- `POST /api/rules` — create a new rule (JSON).
+- `POST /api/rules/{id}` — update an existing rule (JSON, partial patch).
+- `POST /api/rules/{id}/toggle-active` — toggle is_active flag.
+- `RuleCreateRequest`, `RuleUpdateRequest`, `RuleResponse` Pydantic schemas.
+- `RuleRepository.get_by_id()` and `save()` methods.
+- `GET /bookings/failed` dashboard page (shows `failed_to_accept` + `expired`).
+- "Failed / Expired" nav link added to sidebar.
+- Dashboard `/rules` page upgraded: collapsible edit form per rule + create-new form.
+- Fake portal `/admin` standalone HTML page (mirrors footer admin panel).
+- `docker-compose.test.yml` with `--profile api` / `--profile worker` isolation.
+- `Dockerfile.test` for both api and worker (installs dev deps via `uv sync --all-groups`).
+- 13 new rules API tests; total **128 passing** (96 API + 32 worker).
+
+Acceptance:
+
+- All 128 tests pass in Docker.
+- All 8 dashboard pages return 200.
+- Rules API CRUD works end-to-end.
+
+## Task 25 — E2E Smoke Test and Final Polish
+
+Verified end-to-end with `docker compose up --build`:
+
+- API health: `{"status":"ok","service":"api","database":"ok"}`.
+- Fake portal health: `{"status":"ok","service":"fake-portal","layout":"layout_a"}`.
+- Worker logs show successful login, poll cycle, job extraction, rejected screenshot.
+- All 8 dashboard pages (/, /bookings/new, /bookings/accepted, /bookings/rejected,
+  /bookings/failed, /rules, /logs, /portal-status) return HTTP 200.
+- `/api/rules` returns seeded default rule.
+- Test pipeline passes: 96 API tests + 32 worker tests = **128 total**.
+
+No new code changes in this task — verification only.
