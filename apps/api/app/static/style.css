@@ -830,3 +830,77 @@ tr.log-row-warning:hover td  { background: #FEF3C7 !important; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ============================================================
+   RULE FORM — create / edit business rules
+   ============================================================ */
+.rule-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 20px;
+  margin-top: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.form-field input[type="text"],
+.form-field input[type="number"] {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'Fira Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-page);
+  transition: border-color 150ms;
+  outline: none;
+}
+
+.form-field input[type="text"]:focus,
+.form-field input[type="number"]:focus {
+  border-color: var(--color-secondary);
+  background: #fff;
+}
+
+.form-field input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-secondary);
+  cursor: pointer;
+}
+
+.btn-primary-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.btn-primary-sm:hover { background: var(--color-primary-hover); }
+
+/* color-error for required indicators */
+:root { --color-error: #DC2626; }
+
+@media (max-width: 700px) {
+  .rule-form-grid { grid-template-columns: 1fr; }
+}
